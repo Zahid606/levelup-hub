@@ -263,7 +263,11 @@ export default function AdminPanel() {
 
           {/* STUDENTS TAB */}
           <TabsContent value="students" className="space-y-3">
-            {students.map(student => (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search students..." value={searchStudents} onChange={e => setSearchStudents(e.target.value)} className="pl-9" />
+            </div>
+            {filteredStudents.map(student => (
               <Card key={student.id} className="glass-card">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
@@ -272,7 +276,23 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <div className="text-center">
-                      <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                      {editingPoints?.userId === student.user_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            value={editingPoints.points}
+                            onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })}
+                            className="w-20 h-7 text-sm"
+                            onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }}
+                          />
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
+                          <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground">Points</p>
                     </div>
                     <div className="text-center">
