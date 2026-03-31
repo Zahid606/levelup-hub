@@ -80,6 +80,7 @@ export default function Leaderboard() {
                 <div className="flex-shrink-0">{getRankIcon(i)}</div>
                 <div className="flex-1">
                   <p className="font-heading font-semibold">
+                    <span className="text-muted-foreground mr-2">{getOrdinal(i + 1)}</span>
                     {entry.full_name}
                     {entry.user_id === user?.id && <span className="text-xs text-primary ml-2">(You)</span>}
                   </p>

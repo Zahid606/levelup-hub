@@ -33,7 +33,7 @@ export default function AdminPanel() {
 
   async function loadAll() {
     const [lessonsRes, profilesRes, progressRes, pointsRes] = await Promise.all([
-      supabase.from('lessons').select('*').order('sort_order'),
+      supabase.from('lessons').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
