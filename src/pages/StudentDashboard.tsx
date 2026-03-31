@@ -23,7 +23,7 @@ export default function StudentDashboard() {
 
   async function loadData() {
     const [lessonsRes, progressRes, pointsRes, giftsRes] = await Promise.all([
-      supabase.from('lessons').select('*').eq('is_published', true).order('sort_order'),
+      supabase.from('lessons').select('*').eq('is_published', true).order('created_at', { ascending: false }),
       supabase.from('user_progress').select('*').eq('user_id', user!.id),
       supabase.from('user_points').select('points').eq('user_id', user!.id),
       supabase.from('gifts').select('*').eq('user_id', user!.id),

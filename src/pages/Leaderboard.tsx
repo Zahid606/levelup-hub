@@ -44,6 +44,12 @@ export default function Leaderboard() {
     setEntries(leaderboard);
   }
 
+  const getOrdinal = (n: number) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
   const getRankIcon = (rank: number) => {
     if (rank === 0) return <Trophy className="h-6 w-6 text-gold" />;
     if (rank === 1) return <Medal className="h-6 w-6 text-silver" />;
@@ -74,6 +80,7 @@ export default function Leaderboard() {
                 <div className="flex-shrink-0">{getRankIcon(i)}</div>
                 <div className="flex-1">
                   <p className="font-heading font-semibold">
+                    <span className="text-muted-foreground mr-2">{getOrdinal(i + 1)}</span>
                     {entry.full_name}
                     {entry.user_id === user?.id && <span className="text-xs text-primary ml-2">(You)</span>}
                   </p>

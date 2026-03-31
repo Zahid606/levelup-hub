@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil } from 'lucide-react';
 
 export default function AdminPanel() {
   const { user, language } = useAuth();
@@ -28,12 +28,15 @@ export default function AdminPanel() {
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newEmployee, setNewEmployee] = useState({ email: '', password: '', full_name: '' });
   const [dialogOpen, setDialogOpen] = useState('');
+  const [searchLessons, setSearchLessons] = useState('');
+  const [searchStudents, setSearchStudents] = useState('');
+  const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
 
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
     const [lessonsRes, profilesRes, progressRes, pointsRes] = await Promise.all([
-      supabase.from('lessons').select('*').order('sort_order'),
+      supabase.from('lessons').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
@@ -120,6 +123,22 @@ export default function AdminPanel() {
 
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
   const getStudentProgress = (userId: string) => allProgress.filter(p => p.user_id === userId && p.completed).length;
+
+  const filteredLessons = lessons.filter(l => l.title.toLowerCase().includes(searchLessons.toLowerCase()));
+  const filteredStudents = students.filter(s => (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase()));
+
+  const updateStudentPoints = async (userId: string, newTotal: number) => {
+    const currentTotal = getStudentPoints(userId);
+    const diff = newTotal - currentTotal;
+    if (diff === 0) { setEditingPoints(null); return; }
+    const { error } = await supabase.from('user_points').insert({
+      user_id: userId, points: diff, reason: 'Admin adjustment',
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Points updated!');
+    setEditingPoints(null);
+    loadAll();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -211,8 +230,13 @@ export default function AdminPanel() {
               </Dialog>
             </div>
 
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search lessons..." value={searchLessons} onChange={e => setSearchLessons(e.target.value)} className="pl-9" />
+            </div>
+
             <div className="space-y-3">
-              {lessons.map((lesson, i) => (
+              {filteredLessons.map((lesson, i) => (
                 <Card key={lesson.id} className="glass-card">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -239,7 +263,11 @@ export default function AdminPanel() {
 
           {/* STUDENTS TAB */}
           <TabsContent value="students" className="space-y-3">
-            {students.map(student => (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search students..." value={searchStudents} onChange={e => setSearchStudents(e.target.value)} className="pl-9" />
+            </div>
+            {filteredStudents.map(student => (
               <Card key={student.id} className="glass-card">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
@@ -248,7 +276,23 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <div className="text-center">
-                      <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                      {editingPoints?.userId === student.user_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            value={editingPoints.points}
+                            onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })}
+                            className="w-20 h-7 text-sm"
+                            onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }}
+                          />
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
+                          <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground">Points</p>
                     </div>
                     <div className="text-center">
