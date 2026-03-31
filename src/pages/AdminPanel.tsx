@@ -124,6 +124,22 @@ export default function AdminPanel() {
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
   const getStudentProgress = (userId: string) => allProgress.filter(p => p.user_id === userId && p.completed).length;
 
+  const filteredLessons = lessons.filter(l => l.title.toLowerCase().includes(searchLessons.toLowerCase()));
+  const filteredStudents = students.filter(s => (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase()));
+
+  const updateStudentPoints = async (userId: string, newTotal: number) => {
+    const currentTotal = getStudentPoints(userId);
+    const diff = newTotal - currentTotal;
+    if (diff === 0) { setEditingPoints(null); return; }
+    const { error } = await supabase.from('user_points').insert({
+      user_id: userId, points: diff, reason: 'Admin adjustment',
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Points updated!');
+    setEditingPoints(null);
+    loadAll();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
