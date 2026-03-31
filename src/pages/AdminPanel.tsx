@@ -28,6 +28,9 @@ export default function AdminPanel() {
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newEmployee, setNewEmployee] = useState({ email: '', password: '', full_name: '' });
   const [dialogOpen, setDialogOpen] = useState('');
+  const [searchLessons, setSearchLessons] = useState('');
+  const [searchStudents, setSearchStudents] = useState('');
+  const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
 
   useEffect(() => { loadAll(); }, []);
 
