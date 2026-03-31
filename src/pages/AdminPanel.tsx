@@ -230,8 +230,13 @@ export default function AdminPanel() {
               </Dialog>
             </div>
 
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search lessons..." value={searchLessons} onChange={e => setSearchLessons(e.target.value)} className="pl-9" />
+            </div>
+
             <div className="space-y-3">
-              {lessons.map((lesson, i) => (
+              {filteredLessons.map((lesson, i) => (
                 <Card key={lesson.id} className="glass-card">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
