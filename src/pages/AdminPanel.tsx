@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil, PieChart } from 'lucide-react';
+import { AdminAnalytics } from '@/components/AdminAnalytics';
 
 export default function AdminPanel() {
   const { user, language } = useAuth();
@@ -20,6 +21,7 @@ export default function AdminPanel() {
   const [students, setStudents] = useState<any[]>([]);
   const [allProgress, setAllProgress] = useState<any[]>([]);
   const [allPoints, setAllPoints] = useState<any[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
 
   // Forms
   const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
@@ -35,16 +37,18 @@ export default function AdminPanel() {
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [lessonsRes, profilesRes, progressRes, pointsRes] = await Promise.all([
+    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes] = await Promise.all([
       supabase.from('lessons').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
+      supabase.from('quiz_answers').select('*'),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
     setAllProgress(progressRes.data || []);
     setAllPoints(pointsRes.data || []);
+    setQuizAnswers(answersRes.data || []);
   }
 
   const addLesson = async () => {
@@ -155,9 +159,10 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="lessons">
-          <TabsList className="grid grid-cols-4 w-full max-w-lg">
+          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>
             <TabsTrigger value="gifts">Gifts</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
           </TabsList>
@@ -303,6 +308,11 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          {/* ANALYTICS TAB */}
+          <TabsContent value="analytics">
+            <AdminAnalytics students={students} allProgress={allProgress} allPoints={allPoints} lessons={lessons} quizAnswers={quizAnswers} />
           </TabsContent>
 
           {/* GIFTS TAB */}
