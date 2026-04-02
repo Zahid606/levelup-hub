@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil, PieChart } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
+import { StudentActivityLog } from '@/components/StudentActivityLog';
 
 export default function AdminPanel() {
   const { user, language } = useAuth();
