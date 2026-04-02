@@ -37,16 +37,18 @@ export default function AdminPanel() {
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [lessonsRes, profilesRes, progressRes, pointsRes] = await Promise.all([
+    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes] = await Promise.all([
       supabase.from('lessons').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
+      supabase.from('quiz_answers').select('*'),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
     setAllProgress(progressRes.data || []);
     setAllPoints(pointsRes.data || []);
+    setQuizAnswers(answersRes.data || []);
   }
 
   const addLesson = async () => {
