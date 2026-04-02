@@ -21,6 +21,7 @@ export default function AdminPanel() {
   const [students, setStudents] = useState<any[]>([]);
   const [allProgress, setAllProgress] = useState<any[]>([]);
   const [allPoints, setAllPoints] = useState<any[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
 
   // Forms
   const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
