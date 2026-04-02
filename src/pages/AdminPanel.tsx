@@ -159,9 +159,10 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="lessons">
-          <TabsList className="grid grid-cols-4 w-full max-w-lg">
+          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>
             <TabsTrigger value="gifts">Gifts</TabsTrigger>
             <TabsTrigger value="employees">Employees</TabsTrigger>
           </TabsList>
