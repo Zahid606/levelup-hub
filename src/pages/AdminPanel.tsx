@@ -312,8 +312,9 @@ export default function AdminPanel() {
           </TabsContent>
 
           {/* ANALYTICS TAB */}
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" className="space-y-6">
             <AdminAnalytics students={students} allProgress={allProgress} allPoints={allPoints} lessons={lessons} quizAnswers={quizAnswers} />
+            <StudentActivityLog students={students} quizAnswers={quizAnswers} allProgress={allProgress} allPoints={allPoints} lessons={lessons} />
           </TabsContent>
 
           {/* GIFTS TAB */}
