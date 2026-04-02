@@ -310,6 +310,11 @@ export default function AdminPanel() {
             ))}
           </TabsContent>
 
+          {/* ANALYTICS TAB */}
+          <TabsContent value="analytics">
+            <AdminAnalytics students={students} allProgress={allProgress} allPoints={allPoints} lessons={lessons} quizAnswers={quizAnswers} />
+          </TabsContent>
+
           {/* GIFTS TAB */}
           <TabsContent value="gifts" className="space-y-4">
             <Dialog open={dialogOpen === 'gift'} onOpenChange={o => setDialogOpen(o ? 'gift' : '')}>
