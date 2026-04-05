@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil, PieChart } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil, PieChart, Eye, EyeOff } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 
@@ -34,6 +34,7 @@ export default function AdminPanel() {
   const [searchLessons, setSearchLessons] = useState('');
   const [searchStudents, setSearchStudents] = useState('');
   const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
+  const [showEmployeePassword, setShowEmployeePassword] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -345,7 +346,12 @@ export default function AdminPanel() {
                 <div className="space-y-3">
                   <Input placeholder="Full Name" value={newEmployee.full_name} onChange={e => setNewEmployee({ ...newEmployee, full_name: e.target.value })} />
                   <Input type="email" placeholder="Email" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} />
-                  <Input type="password" placeholder="Password" value={newEmployee.password} onChange={e => setNewEmployee({ ...newEmployee, password: e.target.value })} />
+                  <div className="relative">
+                    <Input type={showEmployeePassword ? 'text' : 'password'} placeholder="Password" value={newEmployee.password} onChange={e => setNewEmployee({ ...newEmployee, password: e.target.value })} className="pr-10" />
+                    <button type="button" onClick={() => setShowEmployeePassword(!showEmployeePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                      {showEmployeePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <Button onClick={addEmployee} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                 </div>
               </DialogContent>
