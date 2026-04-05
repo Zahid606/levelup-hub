@@ -19,19 +19,10 @@ export function TopBar() {
     <header className="sticky top-0 z-50 glass-card border-b border-border/50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <svg width="32" height="28" viewBox="0 0 32 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#4F46E5" />
-                <stop offset="100%" stopColor="#A855F7" />
-              </linearGradient>
-            </defs>
-            <rect x="0" y="16" width="8" height="12" rx="2" fill="url(#logoGrad)" opacity="0.55"/>
-            <rect x="12" y="9" width="8" height="19" rx="2" fill="url(#logoGrad)" opacity="0.78"/>
-            <rect x="24" y="0" width="8" height="28" rx="2" fill="url(#logoGrad)"/>
-            <polyline points="25,3 28,0 31,3" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="font-heading text-xl font-bold text-gradient">LevelUp Hub</span>
+          <img src="/logo.png" alt="Misk-ul-Kalam" className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
+          <span className="font-heading text-lg font-bold leading-tight">
+            <span className="text-gradient">Misk-ul-Kalam</span>
+          </span>
         </Link>
 
         {user && (

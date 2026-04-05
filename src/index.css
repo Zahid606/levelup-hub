@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    --background: 240 20% 98%;
-    --foreground: 240 25% 10%;
+    --background: 40 30% 97%;
+    --foreground: 195 40% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 240 25% 10%;
+    --card-foreground: 195 40% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 25% 10%;
-    --primary: 243 75% 59%;
+    --popover-foreground: 195 40% 12%;
+    --primary: 195 62% 28%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 14% 96%;
-    --secondary-foreground: 240 25% 10%;
-    --muted: 240 14% 96%;
-    --muted-foreground: 240 10% 46%;
-    --accent: 270 91% 65%;
+    --secondary: 38 40% 94%;
+    --secondary-foreground: 195 40% 12%;
+    --muted: 38 30% 94%;
+    --muted-foreground: 195 20% 45%;
+    --accent: 38 70% 46%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 13% 91%;
-    --input: 240 13% 91%;
-    --ring: 243 75% 59%;
+    --border: 38 25% 88%;
+    --input: 38 25% 88%;
+    --ring: 195 62% 28%;
     --radius: 0.75rem;
-    --sidebar-background: 240 20% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 243 75% 59%;
+    --sidebar-background: 40 30% 97%;
+    --sidebar-foreground: 195 40% 12%;
+    --sidebar-primary: 195 62% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 14% 95%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 240 13% 91%;
-    --sidebar-ring: 243 75% 59%;
+    --sidebar-accent: 38 40% 94%;
+    --sidebar-accent-foreground: 195 40% 12%;
+    --sidebar-border: 38 25% 88%;
+    --sidebar-ring: 195 62% 28%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -48,33 +48,33 @@
   }
 
   .dark {
-    --background: 240 30% 6%;
-    --foreground: 240 40% 96%;
-    --card: 240 30% 9%;
-    --card-foreground: 240 40% 96%;
-    --popover: 240 30% 9%;
-    --popover-foreground: 240 40% 96%;
-    --primary: 243 75% 65%;
+    --background: 195 40% 7%;
+    --foreground: 38 40% 92%;
+    --card: 195 38% 10%;
+    --card-foreground: 38 40% 92%;
+    --popover: 195 38% 10%;
+    --popover-foreground: 38 40% 92%;
+    --primary: 195 55% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 28% 14%;
-    --secondary-foreground: 240 40% 96%;
-    --muted: 240 28% 14%;
-    --muted-foreground: 240 20% 65%;
-    --accent: 270 85% 70%;
+    --secondary: 195 30% 16%;
+    --secondary-foreground: 38 40% 92%;
+    --muted: 195 30% 16%;
+    --muted-foreground: 195 15% 60%;
+    --accent: 38 70% 52%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62% 30%;
-    --destructive-foreground: 240 40% 98%;
-    --border: 240 28% 18%;
-    --input: 240 28% 18%;
-    --ring: 243 75% 65%;
-    --sidebar-background: 240 30% 8%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 243 75% 65%;
+    --destructive-foreground: 38 40% 98%;
+    --border: 195 28% 20%;
+    --input: 195 28% 20%;
+    --ring: 195 55% 45%;
+    --sidebar-background: 195 40% 8%;
+    --sidebar-foreground: 38 4.8% 95.9%;
+    --sidebar-primary: 195 55% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 28% 14%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 28% 18%;
-    --sidebar-ring: 243 75% 65%;
+    --sidebar-accent: 195 30% 16%;
+    --sidebar-accent-foreground: 38 4.8% 95.9%;
+    --sidebar-border: 195 28% 20%;
+    --sidebar-ring: 195 55% 45%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -103,17 +103,30 @@
     @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
   }
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(243 75% 59%), hsl(270 91% 65%));
+    background: linear-gradient(135deg, hsl(195 62% 28%), hsl(195 55% 38%));
   }
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(270 91% 65%), hsl(300 85% 65%));
+    background: linear-gradient(135deg, hsl(38 70% 42%), hsl(38 75% 54%));
   }
   .gradient-dark {
-    background: linear-gradient(135deg, hsl(240 30% 6%), hsl(240 30% 12%));
+    background: linear-gradient(135deg, hsl(195 40% 7%), hsl(195 38% 13%));
   }
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(243 75% 59%), hsl(270 91% 65%));
+    background-image: linear-gradient(135deg, hsl(195 62% 28%), hsl(38 70% 46%));
+  }
+  .dark .text-gradient {
+    background-image: linear-gradient(135deg, hsl(38 75% 58%), hsl(195 55% 65%));
+  }
+  /* Subtle Islamic geometric border */
+  .islamic-border {
+    border-image: repeating-linear-gradient(
+      45deg,
+      hsl(38 70% 46%),
+      hsl(38 70% 46%) 4px,
+      transparent 4px,
+      transparent 12px
+    ) 1;
   }
   .animate-float {
     animation: float 3s ease-in-out infinite;

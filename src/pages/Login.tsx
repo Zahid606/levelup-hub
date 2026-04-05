@@ -9,7 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { useAuth } from '@/contexts/AuthContext';
 import { t } from '@/lib/i18n';
 import { toast } from 'sonner';
-import { GraduationCap, LogIn, UserPlus, Mail, Phone, Eye, EyeOff } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Phone, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const { language } = useAuth();
@@ -107,13 +107,17 @@ export default function Login() {
       </div>
       
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto gradient-primary rounded-2xl p-4 w-fit">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
+        <CardHeader className="text-center space-y-3">
+          <div className="flex flex-col items-center gap-2">
+            <img src="/logo.png" alt="Misk-ul-Kalam" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+            <div>
+              <p className="font-heading font-bold text-lg text-gradient">Misk-ul-Kalam</p>
+              <p className="text-xs text-muted-foreground">پیغام قرآن وسنت</p>
+            </div>
           </div>
-          <CardTitle className="text-2xl font-heading">{isSignup ? t('auth.signup', language) : t('auth.login', language)}</CardTitle>
+          <CardTitle className="text-xl font-heading">{isSignup ? t('auth.signup', language) : t('auth.login', language)}</CardTitle>
           <CardDescription>
-            {isSignup ? 'Create your student account' : 'Welcome back to LearnHub'}
+            {isSignup ? 'Create your student account' : 'Welcome back'}
           </CardDescription>
         </CardHeader>
         <CardContent>

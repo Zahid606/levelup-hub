@@ -1,12 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <defs>
-    <linearGradient id="g" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#4F46E5"/>
-      <stop offset="100%" stop-color="#A855F7"/>
-    </linearGradient>
-  </defs>
-  <rect x="0" y="18" width="8" height="14" rx="2" fill="url(#g)" opacity="0.55"/>
-  <rect x="12" y="10" width="8" height="22" rx="2" fill="url(#g)" opacity="0.78"/>
-  <rect x="24" y="0" width="8" height="32" rx="2" fill="url(#g)"/>
-  <polyline points="25,4 28,1 31,4" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="32" height="32" rx="8" fill="#1B5E70"/>
+  <!-- Open book -->
+  <path d="M5 22 Q5 10 16 10 Q27 10 27 22" fill="none" stroke="#C8952A" stroke-width="2"/>
+  <line x1="16" y1="10" x2="16" y2="22" stroke="#C8952A" stroke-width="1.5"/>
+  <line x1="5" y1="22" x2="27" y2="22" stroke="#C8952A" stroke-width="2"/>
+  <!-- Star/crescent hint -->
+  <circle cx="16" cy="7" r="2" fill="#C8952A"/>
+  <circle cx="17.2" cy="6.2" r="1.5" fill="#1B5E70"/>
 </svg>

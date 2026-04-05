@@ -49,11 +49,20 @@ export default function AdminLogin() {
       </div>
       
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto bg-secondary rounded-2xl p-4 w-fit border-2 border-accent/30">
-            <Shield className="h-8 w-8 text-accent" />
+        <CardHeader className="text-center space-y-3">
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative">
+              <img src="/logo.png" alt="Misk-ul-Kalam" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+              <div className="absolute -bottom-1 -right-1 bg-accent rounded-full p-1">
+                <Shield className="h-3.5 w-3.5 text-white" />
+              </div>
+            </div>
+            <div>
+              <p className="font-heading font-bold text-lg text-gradient">Misk-ul-Kalam</p>
+              <p className="text-xs text-muted-foreground">پیغام قرآن وسنت</p>
+            </div>
           </div>
-          <CardTitle className="text-2xl font-heading">{t('auth.adminLogin', language)}</CardTitle>
+          <CardTitle className="text-xl font-heading">{t('auth.adminLogin', language)}</CardTitle>
           <CardDescription>Admin access only</CardDescription>
         </CardHeader>
         <CardContent>
