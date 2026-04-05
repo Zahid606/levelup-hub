@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 220 25% 10%;
+    --background: 240 20% 98%;
+    --foreground: 240 25% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 240 25% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
-    --primary: 160 84% 39%;
+    --popover-foreground: 240 25% 10%;
+    --primary: 243 75% 59%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 25% 10%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
-    --accent: 36 100% 50%;
+    --secondary: 240 14% 96%;
+    --secondary-foreground: 240 25% 10%;
+    --muted: 240 14% 96%;
+    --muted-foreground: 240 10% 46%;
+    --accent: 270 91% 65%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 160 84% 39%;
+    --border: 240 13% 91%;
+    --input: 240 13% 91%;
+    --ring: 243 75% 59%;
     --radius: 0.75rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 240 20% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-primary: 243 75% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 14% 95%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-border: 240 13% 91%;
+    --sidebar-ring: 243 75% 59%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -48,33 +48,33 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 160 84% 39%;
+    --background: 240 30% 6%;
+    --foreground: 240 40% 96%;
+    --card: 240 30% 9%;
+    --card-foreground: 240 40% 96%;
+    --popover: 240 30% 9%;
+    --popover-foreground: 240 40% 96%;
+    --primary: 243 75% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 222 30% 14%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 36 100% 50%;
+    --secondary: 240 28% 14%;
+    --secondary-foreground: 240 40% 96%;
+    --muted: 240 28% 14%;
+    --muted-foreground: 240 20% 65%;
+    --accent: 270 85% 70%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 160 84% 39%;
-    --sidebar-background: 222 47% 8%;
+    --destructive-foreground: 240 40% 98%;
+    --border: 240 28% 18%;
+    --input: 240 28% 18%;
+    --ring: 243 75% 65%;
+    --sidebar-background: 240 30% 8%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary: 243 75% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 30% 14%;
+    --sidebar-accent: 240 28% 14%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-border: 240 28% 18%;
+    --sidebar-ring: 243 75% 65%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -103,17 +103,17 @@
     @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
   }
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(160 84% 39%), hsl(180 70% 35%));
+    background: linear-gradient(135deg, hsl(243 75% 59%), hsl(270 91% 65%));
   }
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(36 100% 50%), hsl(25 100% 55%));
+    background: linear-gradient(135deg, hsl(270 91% 65%), hsl(300 85% 65%));
   }
   .gradient-dark {
-    background: linear-gradient(135deg, hsl(222 47% 6%), hsl(222 47% 12%));
+    background: linear-gradient(135deg, hsl(240 30% 6%), hsl(240 30% 12%));
   }
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(160 84% 39%), hsl(36 100% 50%));
+    background-image: linear-gradient(135deg, hsl(243 75% 59%), hsl(270 91% 65%));
   }
   .animate-float {
     animation: float 3s ease-in-out infinite;

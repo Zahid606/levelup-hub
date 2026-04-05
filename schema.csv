@@ -1,0 +1,64 @@
+column_default;column_name;data_type;is_nullable;table_name
+gen_random_uuid();id;uuid;NO;gifts
+;user_id;uuid;NO;gifts
+;gift_name;text;NO;gifts
+;description;text;YES;gifts
+;given_by;uuid;YES;gifts
+now();created_at;timestamp with time zone;NO;gifts
+gen_random_uuid();id;uuid;NO;lesson_content
+;lesson_id;uuid;NO;lesson_content
+'youtube'::text;content_type;text;NO;lesson_content
+;youtube_url;text;YES;lesson_content
+;title;text;YES;lesson_content
+0;sort_order;integer;NO;lesson_content
+now();created_at;timestamp with time zone;NO;lesson_content
+gen_random_uuid();id;uuid;NO;lessons
+;title;text;NO;lessons
+;title_ur;text;YES;lessons
+;title_bn;text;YES;lessons
+;description;text;YES;lessons
+;description_ur;text;YES;lessons
+;description_bn;text;YES;lessons
+0;sort_order;integer;NO;lessons
+false;is_published;boolean;NO;lessons
+now();created_at;timestamp with time zone;NO;lessons
+now();updated_at;timestamp with time zone;NO;lessons
+gen_random_uuid();id;uuid;NO;profiles
+;user_id;uuid;NO;profiles
+;full_name;text;YES;profiles
+;avatar_url;text;YES;profiles
+'en'::text;language;text;NO;profiles
+now();created_at;timestamp with time zone;NO;profiles
+now();updated_at;timestamp with time zone;NO;profiles
+;gender;text;YES;profiles
+;age;integer;YES;profiles
+gen_random_uuid();id;uuid;NO;quiz_answers
+;user_id;uuid;NO;quiz_answers
+;question_id;uuid;NO;quiz_answers
+;selected_answer;integer;NO;quiz_answers
+false;is_correct;boolean;NO;quiz_answers
+0;points_earned;integer;NO;quiz_answers
+now();created_at;timestamp with time zone;NO;quiz_answers
+gen_random_uuid();id;uuid;NO;quiz_questions
+;lesson_id;uuid;NO;quiz_questions
+;question;text;NO;quiz_questions
+;question_ur;text;YES;quiz_questions
+;question_bn;text;YES;quiz_questions
+'[]'::jsonb;options;jsonb;NO;quiz_questions
+0;correct_answer;integer;NO;quiz_questions
+10;points;integer;NO;quiz_questions
+0;sort_order;integer;NO;quiz_questions
+now();created_at;timestamp with time zone;NO;quiz_questions
+gen_random_uuid();id;uuid;NO;user_points
+;user_id;uuid;NO;user_points
+0;points;integer;NO;user_points
+;reason;text;YES;user_points
+now();created_at;timestamp with time zone;NO;user_points
+gen_random_uuid();id;uuid;NO;user_progress
+;user_id;uuid;NO;user_progress
+;lesson_id;uuid;NO;user_progress
+false;completed;boolean;NO;user_progress
+;completed_at;timestamp with time zone;YES;user_progress
+gen_random_uuid();id;uuid;NO;user_roles
+;user_id;uuid;NO;user_roles
+'student'::app_role;role;USER-DEFINED;NO;user_roles

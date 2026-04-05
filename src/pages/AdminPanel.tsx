@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/TopBar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Users, Gift, BarChart3, UserPlus, Search, Pencil, PieChart, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 
@@ -24,17 +24,20 @@ export default function AdminPanel() {
   const [allPoints, setAllPoints] = useState<any[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
 
-  // Forms
   const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
+  const [editingLesson, setEditingLesson] = useState<any | null>(null);
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '' });
   const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newEmployee, setNewEmployee] = useState({ email: '', password: '', full_name: '' });
+  const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
+  const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState('');
   const [searchLessons, setSearchLessons] = useState('');
   const [searchStudents, setSearchStudents] = useState('');
   const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
   const [showEmployeePassword, setShowEmployeePassword] = useState(false);
+  const [showStudentPassword, setShowStudentPassword] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -54,35 +57,36 @@ export default function AdminPanel() {
   }
 
   const addLesson = async () => {
-    const { error } = await supabase.from('lessons').insert({
-      ...newLesson, sort_order: lessons.length, is_published: true,
-    });
+    const { error } = await supabase.from('lessons').insert({ ...newLesson, sort_order: lessons.length, is_published: true });
     if (error) { toast.error(error.message); return; }
     toast.success('Lesson added!');
     setNewLesson({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
-    setDialogOpen('');
-    loadAll();
+    setDialogOpen(''); loadAll();
+  };
+
+  const updateLesson = async () => {
+    if (!editingLesson) return;
+    const { error } = await supabase.from('lessons').update({
+      title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
+      description: editingLesson.description, description_ur: editingLesson.description_ur, description_bn: editingLesson.description_bn,
+    }).eq('id', editingLesson.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Lesson updated!');
+    setEditingLesson(null); loadAll();
   };
 
   const addVideo = async () => {
-    const { error } = await supabase.from('lesson_content').insert({
-      lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url,
-    });
+    const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url });
     if (error) { toast.error(error.message); return; }
     toast.success('Video added!');
-    setNewVideo({ lesson_id: '', title: '', youtube_url: '' });
-    setDialogOpen('');
+    setNewVideo({ lesson_id: '', title: '', youtube_url: '' }); setDialogOpen('');
   };
 
   const addQuizQuestion = async () => {
     const { error } = await supabase.from('quiz_questions').insert({
-      lesson_id: newQuiz.lesson_id,
-      question: newQuiz.question,
-      question_ur: newQuiz.question_ur || null,
-      question_bn: newQuiz.question_bn || null,
-      options: newQuiz.options,
-      correct_answer: newQuiz.correct_answer,
-      points: newQuiz.points,
+      lesson_id: newQuiz.lesson_id, question: newQuiz.question,
+      question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
+      options: newQuiz.options, correct_answer: newQuiz.correct_answer, points: newQuiz.points,
     });
     if (error) { toast.error(error.message); return; }
     toast.success('Quiz question added!');
@@ -91,40 +95,55 @@ export default function AdminPanel() {
   };
 
   const giveGift = async () => {
-    const { error } = await supabase.from('gifts').insert({
-      user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id,
-    });
+    const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
-    setNewGift({ user_id: '', gift_name: '', description: '' });
-    setDialogOpen('');
+    setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen('');
   };
 
   const addEmployee = async () => {
-    const { data, error } = await supabase.auth.signUp({
-      email: newEmployee.email,
-      password: newEmployee.password,
-      options: { data: { full_name: newEmployee.full_name } },
-    });
+    const { data, error } = await supabase.auth.signUp({ email: newEmployee.email, password: newEmployee.password, options: { data: { full_name: newEmployee.full_name } } });
     if (error) { toast.error(error.message); return; }
-    if (data.user) {
-      await supabase.from('user_roles').insert({ user_id: data.user.id, role: 'employee' as any });
-    }
+    if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: 'employee' as any });
     toast.success('Employee account created!');
-    setNewEmployee({ email: '', password: '', full_name: '' });
-    setDialogOpen('');
+    setNewEmployee({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
+  };
+
+  const addStudent = async () => {
+    const { error } = await supabase.auth.signUp({ email: newStudent.email, password: newStudent.password, options: { data: { full_name: newStudent.full_name } } });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Student account created!');
+    setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
+  };
+
+  const deleteStudent = async (userId: string) => {
+    await Promise.all([
+      supabase.from('quiz_answers').delete().eq('user_id', userId),
+      supabase.from('user_progress').delete().eq('user_id', userId),
+      supabase.from('user_points').delete().eq('user_id', userId),
+      supabase.from('gifts').delete().eq('user_id', userId),
+    ]);
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    await supabase.from('profiles').delete().eq('user_id', userId);
+    toast.success('Student removed');
     loadAll();
+  };
+
+  const updateStudent = async () => {
+    if (!editingStudent) return;
+    const { error } = await supabase.from('profiles').update({ full_name: editingStudent.full_name }).eq('user_id', editingStudent.user_id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Student updated!');
+    setEditingStudent(null); loadAll();
   };
 
   const deleteLesson = async (id: string) => {
     await supabase.from('lessons').delete().eq('id', id);
-    toast.success('Lesson deleted');
-    loadAll();
+    toast.success('Lesson deleted'); loadAll();
   };
 
   const togglePublish = async (id: string, current: boolean) => {
-    await supabase.from('lessons').update({ is_published: !current }).eq('id', id);
-    loadAll();
+    await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
   };
 
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
@@ -137,13 +156,9 @@ export default function AdminPanel() {
     const currentTotal = getStudentPoints(userId);
     const diff = newTotal - currentTotal;
     if (diff === 0) { setEditingPoints(null); return; }
-    const { error } = await supabase.from('user_points').insert({
-      user_id: userId, points: diff, reason: 'Admin adjustment',
-    });
+    const { error } = await supabase.from('user_points').insert({ user_id: userId, points: diff, reason: 'Admin adjustment' });
     if (error) { toast.error(error.message); return; }
-    toast.success('Points updated!');
-    setEditingPoints(null);
-    loadAll();
+    toast.success('Points updated!'); setEditingPoints(null); loadAll();
   };
 
   return (
@@ -152,7 +167,6 @@ export default function AdminPanel() {
       <main className="container py-8 space-y-6">
         <h1 className="text-3xl font-heading font-bold">{t('admin.dashboard', language)}</h1>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Users</p></CardContent></Card>
@@ -172,20 +186,24 @@ export default function AdminPanel() {
           {/* LESSONS TAB */}
           <TabsContent value="lessons" className="space-y-4">
             <div className="flex gap-2 flex-wrap">
+              {/* Add Lesson */}
               <Dialog open={dialogOpen === 'lesson'} onOpenChange={o => setDialogOpen(o ? 'lesson' : '')}>
                 <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" />{t('admin.addLesson', language)}</Button></DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addLesson', language)}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
                     <Input placeholder="Title (English)" value={newLesson.title} onChange={e => setNewLesson({ ...newLesson, title: e.target.value })} />
                     <Input placeholder="عنوان (Urdu)" value={newLesson.title_ur} onChange={e => setNewLesson({ ...newLesson, title_ur: e.target.value })} />
                     <Input placeholder="শিরোনাম (Bengali)" value={newLesson.title_bn} onChange={e => setNewLesson({ ...newLesson, title_bn: e.target.value })} />
-                    <Textarea placeholder="Description" value={newLesson.description} onChange={e => setNewLesson({ ...newLesson, description: e.target.value })} />
+                    <Textarea placeholder="Description (English)" value={newLesson.description} onChange={e => setNewLesson({ ...newLesson, description: e.target.value })} />
+                    <Textarea placeholder="تفصیل (Urdu)" value={newLesson.description_ur} onChange={e => setNewLesson({ ...newLesson, description_ur: e.target.value })} />
+                    <Textarea placeholder="বিবরণ (Bengali)" value={newLesson.description_bn} onChange={e => setNewLesson({ ...newLesson, description_bn: e.target.value })} />
                     <Button onClick={addLesson} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
 
+              {/* Add Video */}
               <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><Video className="h-4 w-4 mr-1" />{t('admin.addVideo', language)}</Button></DialogTrigger>
                 <DialogContent>
@@ -202,6 +220,7 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
+              {/* Add Quiz */}
               <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><HelpCircle className="h-4 w-4 mr-1" />{t('admin.addQuiz', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
@@ -218,17 +237,14 @@ export default function AdminPanel() {
                       <div key={i} className="flex gap-2 items-center">
                         <span className="text-sm font-medium w-6">{String.fromCharCode(65 + i)}</span>
                         <Input placeholder={`Option ${i + 1}`} value={opt} onChange={e => {
-                          const opts = [...newQuiz.options];
-                          opts[i] = e.target.value;
+                          const opts = [...newQuiz.options]; opts[i] = e.target.value;
                           setNewQuiz({ ...newQuiz, options: opts });
                         }} />
                       </div>
                     ))}
                     <Select value={String(newQuiz.correct_answer)} onValueChange={v => setNewQuiz({ ...newQuiz, correct_answer: parseInt(v) })}>
                       <SelectTrigger><SelectValue placeholder="Correct Answer" /></SelectTrigger>
-                      <SelectContent>
-                        {newQuiz.options.map((_, i) => <SelectItem key={i} value={String(i)}>Option {String.fromCharCode(65 + i)}</SelectItem>)}
-                      </SelectContent>
+                      <SelectContent>{newQuiz.options.map((_, i) => <SelectItem key={i} value={String(i)}>Option {String.fromCharCode(65 + i)}</SelectItem>)}</SelectContent>
                     </Select>
                     <Input type="number" placeholder="Points" value={newQuiz.points} onChange={e => setNewQuiz({ ...newQuiz, points: parseInt(e.target.value) || 10 })} />
                     <Button onClick={addQuizQuestion} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
@@ -250,14 +266,16 @@ export default function AdminPanel() {
                       <span className="text-sm font-mono text-muted-foreground">#{i + 1}</span>
                       <div>
                         <p className="font-semibold">{lesson.title}</p>
-                        {lesson.description && <p className="text-xs text-muted-foreground">{lesson.description}</p>}
+                        {lesson.title_ur && <p className="text-xs text-muted-foreground" dir="rtl">{lesson.title_ur}</p>}
+                        {lesson.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{lesson.description}</p>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{lesson.is_published ? 'Published' : 'Draft'}</span>
-                        <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>
+                      <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />
+                      <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -266,14 +284,57 @@ export default function AdminPanel() {
                 </Card>
               ))}
             </div>
+
+            {/* Edit Lesson Dialog */}
+            <Dialog open={!!editingLesson} onOpenChange={o => { if (!o) setEditingLesson(null); }}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Edit Lesson</DialogTitle></DialogHeader>
+                {editingLesson && (
+                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Input placeholder="Title (English)" value={editingLesson.title} onChange={e => setEditingLesson({ ...editingLesson, title: e.target.value })} />
+                    <Input placeholder="عنوان (Urdu)" value={editingLesson.title_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, title_ur: e.target.value })} />
+                    <Input placeholder="শিরোনাম (Bengali)" value={editingLesson.title_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, title_bn: e.target.value })} />
+                    <Textarea placeholder="Description (English)" value={editingLesson.description || ''} onChange={e => setEditingLesson({ ...editingLesson, description: e.target.value })} />
+                    <Textarea placeholder="تفصیل (Urdu)" value={editingLesson.description_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, description_ur: e.target.value })} />
+                    <Textarea placeholder="বিবরণ (Bengali)" value={editingLesson.description_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, description_bn: e.target.value })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateLesson} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingLesson(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* STUDENTS TAB */}
           <TabsContent value="students" className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search students..." value={searchStudents} onChange={e => setSearchStudents(e.target.value)} className="pl-9" />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search students..." value={searchStudents} onChange={e => setSearchStudents(e.target.value)} className="pl-9" />
+              </div>
+              <Dialog open={dialogOpen === 'student'} onOpenChange={o => setDialogOpen(o ? 'student' : '')}>
+                <DialogTrigger asChild>
+                  <Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />Add Student</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add Student</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <Input placeholder="Full Name" value={newStudent.full_name} onChange={e => setNewStudent({ ...newStudent, full_name: e.target.value })} />
+                    <Input type="email" placeholder="Email" value={newStudent.email} onChange={e => setNewStudent({ ...newStudent, email: e.target.value })} />
+                    <div className="relative">
+                      <Input type={showStudentPassword ? 'text' : 'password'} placeholder="Password" value={newStudent.password} onChange={e => setNewStudent({ ...newStudent, password: e.target.value })} className="pr-10" />
+                      <button type="button" onClick={() => setShowStudentPassword(!showStudentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {showStudentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button onClick={addStudent} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+
             {filteredStudents.map(student => (
               <Card key={student.id} className="glass-card">
                 <CardContent className="p-4 flex items-center justify-between">
@@ -281,17 +342,12 @@ export default function AdminPanel() {
                     <p className="font-semibold">{student.full_name || 'No name'}</p>
                     <p className="text-xs text-muted-foreground">Joined: {new Date(student.created_at).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-3 text-sm">
                     <div className="text-center">
                       {editingPoints?.userId === student.user_id ? (
                         <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={editingPoints.points}
-                            onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })}
-                            className="w-20 h-7 text-sm"
-                            onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }}
-                          />
+                          <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
+                            onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
                           <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
                         </div>
                       ) : (
@@ -306,10 +362,32 @@ export default function AdminPanel() {
                       <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                       <p className="text-xs text-muted-foreground">Lessons</p>
                     </div>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => deleteStudent(student.user_id)} className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
+
+            {/* Edit Student Dialog */}
+            <Dialog open={!!editingStudent} onOpenChange={o => { if (!o) setEditingStudent(null); }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Edit Student</DialogTitle></DialogHeader>
+                {editingStudent && (
+                  <div className="space-y-3">
+                    <Input placeholder="Full Name" value={editingStudent.full_name || ''} onChange={e => setEditingStudent({ ...editingStudent, full_name: e.target.value })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateStudent} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingStudent(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* ANALYTICS TAB */}
@@ -348,7 +426,7 @@ export default function AdminPanel() {
                   <Input type="email" placeholder="Email" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} />
                   <div className="relative">
                     <Input type={showEmployeePassword ? 'text' : 'password'} placeholder="Password" value={newEmployee.password} onChange={e => setNewEmployee({ ...newEmployee, password: e.target.value })} className="pr-10" />
-                    <button type="button" onClick={() => setShowEmployeePassword(!showEmployeePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                    <button type="button" onClick={() => setShowEmployeePassword(!showEmployeePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
                       {showEmployeePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
