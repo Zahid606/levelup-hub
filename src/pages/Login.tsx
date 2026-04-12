@@ -195,6 +195,15 @@ export default function Login() {
                     </SelectContent>
                   </Select>
                   <Input type="number" placeholder="Age" min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
+                  <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
+                    <SelectContent>
+                      {['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </>
               )}
               <Input
