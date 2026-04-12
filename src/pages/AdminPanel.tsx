@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
+import { LessonVideoManager } from '@/components/LessonVideoManager';
 
 export default function AdminPanel() {
   const { user, language } = useAuth();
@@ -297,6 +298,11 @@ export default function AdminPanel() {
                     <Textarea placeholder="Description (English)" value={editingLesson.description || ''} onChange={e => setEditingLesson({ ...editingLesson, description: e.target.value })} />
                     <Textarea placeholder="تفصیل (Urdu)" value={editingLesson.description_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, description_ur: e.target.value })} />
                     <Textarea placeholder="বিবরণ (Bengali)" value={editingLesson.description_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, description_bn: e.target.value })} />
+                    
+                    <div className="border-t border-border pt-3">
+                      <LessonVideoManager lessonId={editingLesson.id} lessonTitle={editingLesson.title} />
+                    </div>
+
                     <div className="flex gap-2">
                       <Button onClick={updateLesson} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                       <Button onClick={() => setEditingLesson(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
