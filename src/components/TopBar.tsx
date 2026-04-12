@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ProfileSettings } from '@/components/ProfileSettings';
 
 export function TopBar() {
   const { user, isAdmin, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
@@ -62,10 +63,13 @@ export function TopBar() {
           </div>
 
           {user && (
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
-              <LogOut className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">{t('auth.logout', language)}</span>
-            </Button>
+            <>
+              <ProfileSettings />
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">{t('auth.logout', language)}</span>
+              </Button>
+            </>
           )}
         </div>
       </div>
