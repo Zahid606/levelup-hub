@@ -24,6 +24,8 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,7 +36,7 @@ export default function Login() {
       if (isSignup) {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null } }
+          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null, city: city || null, country: country || null } }
         });
         if (error) throw error;
         toast.success('Account created! Please check your email to verify.');
@@ -58,7 +60,7 @@ export default function Login() {
         const { error } = await supabase.auth.signUp({
           phone,
           password: Math.random().toString(36).slice(-10),
-          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null } }
+          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null, city: city || null, country: country || null } }
         });
         if (error) throw error;
       } else {
