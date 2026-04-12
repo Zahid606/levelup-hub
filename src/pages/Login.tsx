@@ -24,6 +24,8 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,7 +36,7 @@ export default function Login() {
       if (isSignup) {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null } }
+          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null, city: city || null, country: country || null } }
         });
         if (error) throw error;
         toast.success('Account created! Please check your email to verify.');
@@ -58,7 +60,7 @@ export default function Login() {
         const { error } = await supabase.auth.signUp({
           phone,
           password: Math.random().toString(36).slice(-10),
-          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null } }
+          options: { data: { full_name: fullName, gender, age: age ? parseInt(age) : null, city: city || null, country: country || null } }
         });
         if (error) throw error;
       } else {
@@ -156,6 +158,15 @@ export default function Login() {
                     </SelectContent>
                   </Select>
                   <Input type="number" placeholder="Age" min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
+                  <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
+                    <SelectContent>
+                      {['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </>
               )}
               <Input type="email" placeholder={t('auth.email', language)} value={email} onChange={e => setEmail(e.target.value)} required />
@@ -184,6 +195,15 @@ export default function Login() {
                     </SelectContent>
                   </Select>
                   <Input type="number" placeholder="Age" min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
+                  <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
+                    <SelectContent>
+                      {['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </>
               )}
               <Input

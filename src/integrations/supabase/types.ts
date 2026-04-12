@@ -49,6 +49,7 @@ export type Database = {
           lesson_id: string
           sort_order: number
           title: string | null
+          video_points: number
           youtube_url: string | null
         }
         Insert: {
@@ -58,6 +59,7 @@ export type Database = {
           lesson_id: string
           sort_order?: number
           title?: string | null
+          video_points?: number
           youtube_url?: string | null
         }
         Update: {
@@ -67,6 +69,7 @@ export type Database = {
           lesson_id?: string
           sort_order?: number
           title?: string | null
+          video_points?: number
           youtube_url?: string | null
         }
         Relationships: [
@@ -125,6 +128,8 @@ export type Database = {
         Row: {
           age: number | null
           avatar_url: string | null
+          city: string | null
+          country: string | null
           created_at: string
           full_name: string | null
           gender: string | null
@@ -136,6 +141,8 @@ export type Database = {
         Insert: {
           age?: number | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           full_name?: string | null
           gender?: string | null
@@ -147,6 +154,8 @@ export type Database = {
         Update: {
           age?: number | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           full_name?: string | null
           gender?: string | null
@@ -315,6 +324,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_completions: {
+        Row: {
+          completed_at: string
+          content_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          content_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          content_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_completions_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_content"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
