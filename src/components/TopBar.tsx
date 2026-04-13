@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
+import { DeviceIcon } from '@/components/DeviceIcon';
 
 export function TopBar() {
   const { user, isAdmin, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
@@ -45,6 +46,8 @@ export function TopBar() {
         )}
 
         <div className="flex items-center gap-3">
+          {user && <DeviceIcon />}
+          
           <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
             <SelectTrigger className="w-[100px] h-8 text-xs">
               <SelectValue />

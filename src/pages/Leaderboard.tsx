@@ -3,12 +3,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/TopBar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Trophy, Medal, Award, BookOpen } from 'lucide-react';
 
 interface LeaderboardEntry {
   user_id: string;
   total_points: number;
+  completed_lessons: number;
   full_name: string;
 }
 
@@ -21,40 +22,43 @@ export default function Leaderboard() {
   }, []);
 
   async function loadLeaderboard() {
-    // Get all points grouped by user
-    const { data: points } = await supabase.from('user_points').select('user_id, points');
-    if (!points) return;
+    const [pointsRes, profilesRes, progressRes] = await Promise.all([
+      supabase.from('user_points').select('user_id, points'),
+      supabase.from('profiles').select('user_id, full_name'),
+      supabase.from('user_progress').select('user_id, completed').eq('completed', true),
+    ]);
+
+    const points = pointsRes.data || [];
+    const profiles = profilesRes.data || [];
+    const progress = progressRes.data || [];
 
     const pointsByUser: Record<string, number> = {};
     points.forEach(p => {
       pointsByUser[p.user_id] = (pointsByUser[p.user_id] || 0) + p.points;
     });
 
-    const userIds = Object.keys(pointsByUser);
-    if (userIds.length === 0) return;
+    const lessonsByUser: Record<string, number> = {};
+    progress.forEach(p => {
+      lessonsByUser[p.user_id] = (lessonsByUser[p.user_id] || 0) + 1;
+    });
 
-    const { data: profiles } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+    const allUserIds = new Set([...Object.keys(pointsByUser), ...Object.keys(lessonsByUser)]);
 
-    const leaderboard = userIds.map(uid => ({
+    const leaderboard = Array.from(allUserIds).map(uid => ({
       user_id: uid,
-      total_points: pointsByUser[uid],
-      full_name: profiles?.find(p => p.user_id === uid)?.full_name || 'Unknown',
-    })).sort((a, b) => b.total_points - a.total_points);
+      total_points: pointsByUser[uid] || 0,
+      completed_lessons: lessonsByUser[uid] || 0,
+      full_name: profiles.find(p => p.user_id === uid)?.full_name || 'Unknown',
+    })).sort((a, b) => b.total_points - a.total_points || b.completed_lessons - a.completed_lessons);
 
     setEntries(leaderboard);
   }
 
-  const getOrdinal = (n: number) => {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  };
-
   const getRankIcon = (rank: number) => {
-    if (rank === 0) return <Trophy className="h-6 w-6 text-gold" />;
-    if (rank === 1) return <Medal className="h-6 w-6 text-silver" />;
-    if (rank === 2) return <Award className="h-6 w-6 text-bronze" />;
-    return <span className="w-6 h-6 flex items-center justify-center text-sm font-bold text-muted-foreground">{rank + 1}</span>;
+    if (rank === 0) return <span className="text-2xl">🥇</span>;
+    if (rank === 1) return <span className="text-2xl">🥈</span>;
+    if (rank === 2) return <span className="text-2xl">🥉</span>;
+    return <span className="w-8 h-8 flex items-center justify-center text-sm font-bold text-muted-foreground rounded-full bg-secondary">{rank + 1}</span>;
   };
 
   const getRankBg = (rank: number) => {
@@ -80,9 +84,12 @@ export default function Leaderboard() {
                 <div className="flex-shrink-0">{getRankIcon(i)}</div>
                 <div className="flex-1">
                   <p className="font-heading font-semibold">
-                    <span className="text-muted-foreground mr-2">{getOrdinal(i + 1)}</span>
                     {entry.full_name}
                     {entry.user_id === user?.id && <span className="text-xs text-primary ml-2">(You)</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <BookOpen className="h-3 w-3" />
+                    {entry.completed_lessons} lessons completed
                   </p>
                 </div>
                 <div className="text-right">

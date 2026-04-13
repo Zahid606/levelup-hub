@@ -10,6 +10,12 @@ import { Settings } from 'lucide-react';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
+const SAUDI_CITIES = [
+  'Riyadh', 'Jeddah', 'Makkah', 'Madinah', 'Dammam', 'Dhahran', 'Khobar', 'Tabuk',
+  'Buraidah', 'Khamis Mushait', 'Abha', 'Taif', 'Hail', 'Najran', 'Jubail', 'Yanbu',
+  'Al Ahsa', 'Arar', 'Sakaka', 'Jizan', 'Al Baha', 'Bisha', 'Unaizah', 'Qatif', 'Other'
+];
+
 export function ProfileSettings() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -47,13 +53,22 @@ export function ProfileSettings() {
       <DialogContent>
         <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
-          <Select value={country} onValueChange={setCountry}>
+          <Select value={country} onValueChange={v => { setCountry(v); if (v !== 'Saudi Arabia') setCity(''); }}>
             <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
             <SelectContent>
               {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
+          {country === 'Saudi Arabia' ? (
+            <Select value={city} onValueChange={setCity}>
+              <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
+              <SelectContent>
+                {SAUDI_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+          )}
           <Button onClick={handleSave} disabled={loading} className="w-full gradient-primary text-primary-foreground">
             Save Changes
           </Button>
