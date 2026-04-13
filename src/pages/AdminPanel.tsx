@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
@@ -39,6 +39,10 @@ export default function AdminPanel() {
   const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
   const [showEmployeePassword, setShowEmployeePassword] = useState(false);
   const [showStudentPassword, setShowStudentPassword] = useState(false);
+  const [resetPasswordStudent, setResetPasswordStudent] = useState<any | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -162,6 +166,26 @@ export default function AdminPanel() {
     toast.success('Points updated!'); setEditingPoints(null); loadAll();
   };
 
+  const handleResetPassword = async () => {
+    if (!resetPasswordStudent || !newPassword) return;
+    setResettingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('admin-reset-password', {
+        body: { user_id: resetPasswordStudent.user_id, new_password: newPassword },
+      });
+      if (res.error) throw new Error(res.error.message || 'Failed to reset password');
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Password reset for ${resetPasswordStudent.full_name || 'student'}!`);
+      setResetPasswordStudent(null);
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
@@ -187,7 +211,6 @@ export default function AdminPanel() {
           {/* LESSONS TAB */}
           <TabsContent value="lessons" className="space-y-4">
             <div className="flex gap-2 flex-wrap">
-              {/* Add Lesson */}
               <Dialog open={dialogOpen === 'lesson'} onOpenChange={o => setDialogOpen(o ? 'lesson' : '')}>
                 <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><Plus className="h-4 w-4 mr-1" />{t('admin.addLesson', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
@@ -204,7 +227,6 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
-              {/* Add Video */}
               <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><Video className="h-4 w-4 mr-1" />{t('admin.addVideo', language)}</Button></DialogTrigger>
                 <DialogContent>
@@ -221,7 +243,6 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
-              {/* Add Quiz */}
               <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><HelpCircle className="h-4 w-4 mr-1" />{t('admin.addQuiz', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
@@ -286,7 +307,6 @@ export default function AdminPanel() {
               ))}
             </div>
 
-            {/* Edit Lesson Dialog */}
             <Dialog open={!!editingLesson} onOpenChange={o => { if (!o) setEditingLesson(null); }}>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle>Edit Lesson</DialogTitle></DialogHeader>
@@ -298,11 +318,9 @@ export default function AdminPanel() {
                     <Textarea placeholder="Description (English)" value={editingLesson.description || ''} onChange={e => setEditingLesson({ ...editingLesson, description: e.target.value })} />
                     <Textarea placeholder="تفصیل (Urdu)" value={editingLesson.description_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, description_ur: e.target.value })} />
                     <Textarea placeholder="বিবরণ (Bengali)" value={editingLesson.description_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, description_bn: e.target.value })} />
-                    
                     <div className="border-t border-border pt-3">
                       <LessonVideoManager lessonId={editingLesson.id} lessonTitle={editingLesson.title} />
                     </div>
-
                     <div className="flex gap-2">
                       <Button onClick={updateLesson} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                       <Button onClick={() => setEditingLesson(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
@@ -346,7 +364,9 @@ export default function AdminPanel() {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
                     <p className="font-semibold">{student.full_name || 'No name'}</p>
-                    <p className="text-xs text-muted-foreground">Joined: {new Date(student.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {student.city && `${student.city}, `}{student.country || ''} • Joined: {new Date(student.created_at).toLocaleDateString()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <div className="text-center">
@@ -368,6 +388,9 @@ export default function AdminPanel() {
                       <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                       <p className="text-xs text-muted-foreground">Lessons</p>
                     </div>
+                    <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -389,6 +412,40 @@ export default function AdminPanel() {
                     <div className="flex gap-2">
                       <Button onClick={updateStudent} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                       <Button onClick={() => setEditingStudent(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Reset Password Dialog */}
+            <Dialog open={!!resetPasswordStudent} onOpenChange={o => { if (!o) { setResetPasswordStudent(null); setNewPassword(''); } }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Reset Password</DialogTitle></DialogHeader>
+                {resetPasswordStudent && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Reset password for <strong>{resetPasswordStudent.full_name || 'student'}</strong>
+                    </p>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="New Password (min 6 chars)"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        minLength={6}
+                        className="pr-10"
+                      />
+                      <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6} className="flex-1 gradient-primary text-primary-foreground">
+                        <KeyRound className="h-4 w-4 mr-1" />
+                        {resettingPassword ? 'Resetting...' : 'Reset Password'}
+                      </Button>
+                      <Button onClick={() => { setResetPasswordStudent(null); setNewPassword(''); }} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
                     </div>
                   </div>
                 )}
