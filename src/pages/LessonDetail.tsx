@@ -10,7 +10,6 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { ArrowLeft, CheckCircle2, XCircle, Play, Lock, Star } from 'lucide-react';
 
-// YouTube IFrame API types
 declare global {
   interface Window {
     YT: any;
@@ -40,6 +39,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const maxReachedRef = useRef(0);
   const [watchPercent, setWatchPercent] = useState(isCompleted ? 100 : 0);
   const ytReady = useYouTubeAPI();
 
@@ -55,29 +55,55 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
       videoId,
       width: '100%',
       height: '100%',
-      playerVars: { rel: 0, modestbranding: 1 },
+      playerVars: {
+        rel: 0,
+        modestbranding: 1,
+        disablekb: 1,           // Disable keyboard controls (no arrow key skip)
+        iv_load_policy: 3,      // Disable annotations
+        fs: 1,
+      },
       events: {
         onStateChange: (e: any) => {
           if (e.data === window.YT.PlayerState.PLAYING) {
             intervalRef.current = setInterval(() => {
               const p = playerRef.current;
-              if (p?.getCurrentTime && p?.getDuration) {
-                const pct = Math.round((p.getCurrentTime() / p.getDuration()) * 100);
-                setWatchPercent(pct);
-                if (pct >= 90) {
-                  clearInterval(intervalRef.current);
-                  onComplete(contentId, videoPoints);
-                }
+              if (!p?.getCurrentTime || !p?.getDuration) return;
+              const currentTime = p.getCurrentTime();
+              const duration = p.getDuration();
+
+              // Anti-cheat: if user skipped forward beyond what they've watched, seek back
+              if (currentTime > maxReachedRef.current + 3) {
+                p.seekTo(maxReachedRef.current, true);
+                toast.error('Skipping is not allowed! Watch the full video.');
+                return;
               }
-            }, 2000);
+              maxReachedRef.current = Math.max(maxReachedRef.current, currentTime);
+
+              const pct = Math.round((maxReachedRef.current / duration) * 100);
+              setWatchPercent(pct);
+              if (pct >= 100) {
+                clearInterval(intervalRef.current);
+                onComplete(contentId, videoPoints);
+              }
+            }, 1500);
           } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
+        },
+        onReady: (e: any) => {
+          // Lock playback speed to 1x
+          e.target.setPlaybackRate(1);
         },
       },
     });
     return () => { clearInterval(intervalRef.current); playerRef.current?.destroy?.(); };
   }, [ytReady, videoId, contentId, isCompleted]);
+
+  // Anti-cheat: disable right-click on video area
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    return false;
+  };
 
   if (isCompleted) {
     return (
@@ -92,12 +118,12 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onContextMenu={handleContextMenu}>
       <div ref={containerRef} className="aspect-video rounded-lg overflow-hidden" />
       <div className="flex items-center gap-2">
         <Progress value={watchPercent} className="h-2 flex-1" />
         <span className="text-xs text-muted-foreground">{watchPercent}%</span>
-        {watchPercent >= 90 && <CheckCircle2 className="h-4 w-4 text-primary" />}
+        {watchPercent >= 100 && <CheckCircle2 className="h-4 w-4 text-primary" />}
       </div>
     </div>
   );
@@ -150,7 +176,17 @@ export default function LessonDetail() {
       await supabase.from('user_points').insert({ user_id: user.id, points, reason: `Watched video` });
       toast.success(`+${points} ${t('points.total', language)} for watching! 🎬`);
     }
-  }, [user, completedVideos, language]);
+
+    // Check if all videos are now completed → auto-complete lesson
+    const updatedCompleted = new Set([...completedVideos, contentId]);
+    const allDone = content.every(c => updatedCompleted.has(c.id));
+    if (allDone && id) {
+      await supabase.from('user_progress').upsert({
+        user_id: user.id, lesson_id: id, completed: true, completed_at: new Date().toISOString()
+      });
+      toast.success('Lesson auto-completed! 🎉');
+    }
+  }, [user, completedVideos, content, language, id]);
 
   const allVideosCompleted = content.length === 0 || content.every(c => completedVideos.has(c.id));
 
@@ -175,13 +211,6 @@ export default function LessonDetail() {
 
   const nextQuestion = () => { setCurrentQ(p => p + 1); setSelectedAnswer(null); setAnswered(false); };
 
-  const markComplete = async () => {
-    if (!user || !id) return;
-    await supabase.from('user_progress').upsert({ user_id: user.id, lesson_id: id, completed: true, completed_at: new Date().toISOString() });
-    await supabase.from('user_points').insert({ user_id: user.id, points: 50, reason: `Completed lesson: ${lesson?.title}` });
-    toast.success('Lesson completed! +50 points 🎉');
-  };
-
   const getQuestionText = (q: any) => {
     if (language === 'ur' && q.question_ur) return q.question_ur;
     if (language === 'bn' && q.question_bn) return q.question_bn;
@@ -197,7 +226,7 @@ export default function LessonDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" onContextMenu={e => e.preventDefault()}>
       <TopBar />
       <main className="container py-8 max-w-4xl space-y-6">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -258,7 +287,13 @@ export default function LessonDetail() {
               <CardContent className="space-y-4">
                 {currentQ < questions.length ? (
                   <>
-                    <p className="text-lg font-medium">{getQuestionText(questions[currentQ])}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-medium">{getQuestionText(questions[currentQ])}</p>
+                      <span className="text-sm font-semibold text-accent flex items-center gap-1">
+                        <Star className="h-4 w-4" />
+                        {questions[currentQ].points} pts
+                      </span>
+                    </div>
                     {answeredQuestions.has(questions[currentQ].id) && !answered && (
                       <p className="text-sm text-muted-foreground">You already answered this question.</p>
                     )}
@@ -279,7 +314,7 @@ export default function LessonDetail() {
                     {answered && (
                       <div className={`flex items-center gap-2 p-3 rounded-lg ${isCorrect ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                         {isCorrect ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-                        {isCorrect ? t('quiz.correct', language) : t('quiz.wrong', language)}
+                        {isCorrect ? `${t('quiz.correct', language)} +${questions[currentQ].points} pts` : t('quiz.wrong', language)}
                       </div>
                     )}
                     <div className="flex gap-2">
@@ -300,10 +335,6 @@ export default function LessonDetail() {
             )}
           </Card>
         )}
-
-        <Button onClick={markComplete} className="w-full gradient-primary text-primary-foreground text-lg h-14">
-          <CheckCircle2 className="h-5 w-5 mr-2" /> Mark as Complete (+50 points)
-        </Button>
       </main>
     </div>
   );
