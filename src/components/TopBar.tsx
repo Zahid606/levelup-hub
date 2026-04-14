@@ -9,7 +9,7 @@ import { ProfileSettings } from '@/components/ProfileSettings';
 import { DeviceIcon } from '@/components/DeviceIcon';
 
 export function TopBar() {
-  const { user, isAdmin, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
+  const { user, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
