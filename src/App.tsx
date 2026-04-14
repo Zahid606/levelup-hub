@@ -22,10 +22,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, isEmployee, isVolunteer, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   if (!user) return <Navigate to="/admin-login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin && !isEmployee && !isVolunteer) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 

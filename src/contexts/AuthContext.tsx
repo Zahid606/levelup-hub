@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isEmployee: boolean;
+  isVolunteer: boolean;
   language: Language;
   setLanguage: (lang: Language) => void;
   darkMode: boolean;
@@ -24,13 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEmployee, setIsEmployee] = useState(false);
+  const [isVolunteer, setIsVolunteer] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'en');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
 
-  useEffect(() => {
-    localStorage.setItem('lang', language);
-  }, [language]);
-
+  useEffect(() => { localStorage.setItem('lang', language); }, [language]);
   useEffect(() => {
     localStorage.setItem('darkMode', String(darkMode));
     document.documentElement.classList.toggle('dark', darkMode);
@@ -43,8 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setTimeout(() => checkRoles(session.user.id), 0);
       } else {
-        setIsAdmin(false);
-        setIsEmployee(false);
+        setIsAdmin(false); setIsEmployee(false); setIsVolunteer(false);
       }
       setLoading(false);
     });
@@ -64,19 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setIsAdmin(data.some(r => r.role === 'admin'));
       setIsEmployee(data.some(r => r.role === 'employee'));
+      setIsVolunteer(data.some(r => r.role === 'volunteer' as any));
     }
   }
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setIsAdmin(false);
-    setIsEmployee(false);
+    setUser(null); setSession(null);
+    setIsAdmin(false); setIsEmployee(false); setIsVolunteer(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isEmployee, language, setLanguage, darkMode, setDarkMode, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut }}>
       {children}
     </AuthContext.Provider>
   );
