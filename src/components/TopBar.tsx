@@ -9,7 +9,7 @@ import { ProfileSettings } from '@/components/ProfileSettings';
 import { DeviceIcon } from '@/components/DeviceIcon';
 
 export function TopBar() {
-  const { user, isAdmin, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
+  const { user, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -36,7 +36,7 @@ export function TopBar() {
               <Trophy className="h-4 w-4" />
               {t('nav.leaderboard', language)}
             </Link>
-            {isAdmin && (
+            {(isAdmin || isEmployee || isVolunteer) && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 <Shield className="h-4 w-4" />
                 {t('nav.admin', language)}
