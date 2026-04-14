@@ -1,3 +1,4 @@
+import logoImg from '@/assets/logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
-import { DeviceIcon } from '@/components/DeviceIcon';
+
 
 export function TopBar() {
   const { user, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
@@ -20,11 +21,9 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-50 glass-card border-b border-border/50">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Misk-ul-Kalam" className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
-          <span className="font-heading text-lg font-bold leading-tight hidden sm:block">
-            <span className="text-gradient">Misk-ul-Kalam</span>
-          </span>
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <img src={logoImg} alt="Misk-ul-Kalam" className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
+          <span className="hidden md:inline text-sm font-semibold text-foreground">Misk-ul-Kalam</span>
         </Link>
 
         {user && (
@@ -45,11 +44,11 @@ export function TopBar() {
           </nav>
         )}
 
-        <div className="flex items-center gap-3">
-          {user && <DeviceIcon />}
-          
+        <div className="flex items-center gap-2">
+
+
           <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-            <SelectTrigger className="w-[100px] h-8 text-xs">
+            <SelectTrigger className="w-[90px] h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -59,10 +58,10 @@ export function TopBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1.5">
-            <Sun className="h-3.5 w-3.5 text-muted-foreground" />
-            <Switch checked={darkMode} onCheckedChange={setDarkMode} className="data-[state=checked]:bg-primary" />
-            <Moon className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-1">
+            <Sun className="h-3 w-3 text-muted-foreground" />
+            <Switch checked={darkMode} onCheckedChange={setDarkMode} className="h-4 w-8 data-[state=checked]:bg-primary [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-4" />
+            <Moon className="h-3 w-3 text-muted-foreground" />
           </div>
 
           {user && (
@@ -70,7 +69,7 @@ export function TopBar() {
               <ProfileSettings />
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
                 <LogOut className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">{t('auth.logout', language)}</span>
+                <span className="hidden md:inline">{t('auth.logout', language)}</span>
               </Button>
             </>
           )}
