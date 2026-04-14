@@ -12,53 +12,73 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
+const ROLE_CONFIG = {
+  admin: { label: 'Admin', icon: Shield, color: 'text-red-500', desc: 'Full access' },
+  employee: { label: 'Employee', icon: ShieldCheck, color: 'text-blue-500', desc: 'Full access' },
+  volunteer: { label: 'Volunteer', icon: Heart, color: 'text-pink-500', desc: 'Add/edit only' },
+};
 
 export default function AdminPanel() {
-  const { user, language } = useAuth();
+  const { user, language, isAdmin, isEmployee, isVolunteer } = useAuth();
+  const canDelete = isAdmin || isEmployee; // volunteers cannot delete
+
   const [lessons, setLessons] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [allProgress, setAllProgress] = useState<any[]>([]);
   const [allPoints, setAllPoints] = useState<any[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
+  const [staffRoles, setStaffRoles] = useState<any[]>([]);
 
   const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '' });
   const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
-  const [newEmployee, setNewEmployee] = useState({ email: '', password: '', full_name: '' });
+  const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
   const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState('');
   const [searchLessons, setSearchLessons] = useState('');
   const [searchStudents, setSearchStudents] = useState('');
   const [editingPoints, setEditingPoints] = useState<{ userId: string; points: string } | null>(null);
-  const [showEmployeePassword, setShowEmployeePassword] = useState(false);
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [showStudentPassword, setShowStudentPassword] = useState(false);
   const [resetPasswordStudent, setResetPasswordStudent] = useState<any | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
+  // Student filters
+  const [filterCountry, setFilterCountry] = useState('all');
+  const [filterGender, setFilterGender] = useState('all');
+  const [filterAgeMin, setFilterAgeMin] = useState('');
+  const [filterAgeMax, setFilterAgeMax] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes] = await Promise.all([
+    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
       supabase.from('lessons').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
       supabase.from('quiz_answers').select('*'),
+      supabase.from('user_roles').select('*'),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
     setAllProgress(progressRes.data || []);
     setAllPoints(pointsRes.data || []);
     setQuizAnswers(answersRes.data || []);
+    setStaffRoles(rolesRes.data || []);
   }
 
   const addLesson = async () => {
@@ -106,12 +126,12 @@ export default function AdminPanel() {
     setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen('');
   };
 
-  const addEmployee = async () => {
-    const { data, error } = await supabase.auth.signUp({ email: newEmployee.email, password: newEmployee.password, options: { data: { full_name: newEmployee.full_name } } });
+  const addStaffMember = async () => {
+    const { data, error } = await supabase.auth.signUp({ email: newStaff.email, password: newStaff.password, options: { data: { full_name: newStaff.full_name } } });
     if (error) { toast.error(error.message); return; }
-    if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: 'employee' as any });
-    toast.success('Employee account created!');
-    setNewEmployee({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
+    if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: newStaff.role as any });
+    toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
+    setNewStaff({ email: '', password: '', full_name: '', role: 'employee' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
@@ -122,6 +142,7 @@ export default function AdminPanel() {
   };
 
   const deleteStudent = async (userId: string) => {
+    if (!canDelete) { toast.error('Volunteers cannot delete content'); return; }
     await Promise.all([
       supabase.from('quiz_answers').delete().eq('user_id', userId),
       supabase.from('user_progress').delete().eq('user_id', userId),
@@ -130,8 +151,7 @@ export default function AdminPanel() {
     ]);
     await supabase.from('user_roles').delete().eq('user_id', userId);
     await supabase.from('profiles').delete().eq('user_id', userId);
-    toast.success('Student removed');
-    loadAll();
+    toast.success('Student removed'); loadAll();
   };
 
   const updateStudent = async () => {
@@ -143,6 +163,7 @@ export default function AdminPanel() {
   };
 
   const deleteLesson = async (id: string) => {
+    if (!canDelete) { toast.error('Volunteers cannot delete content'); return; }
     await supabase.from('lessons').delete().eq('id', id);
     toast.success('Lesson deleted'); loadAll();
   };
@@ -153,9 +174,22 @@ export default function AdminPanel() {
 
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
   const getStudentProgress = (userId: string) => allProgress.filter(p => p.user_id === userId && p.completed).length;
+  const getUserRole = (userId: string) => {
+    const role = staffRoles.find(r => r.user_id === userId);
+    return role?.role || 'student';
+  };
 
-  const filteredLessons = lessons.filter(l => l.title.toLowerCase().includes(searchLessons.toLowerCase()));
-  const filteredStudents = students.filter(s => (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase()));
+  // Filtered students
+  const filteredStudents = students.filter(s => {
+    const matchSearch = (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase());
+    const matchCountry = filterCountry === 'all' || s.country === filterCountry;
+    const matchGender = filterGender === 'all' || s.gender === filterGender;
+    const matchAgeMin = !filterAgeMin || (s.age && s.age >= parseInt(filterAgeMin));
+    const matchAgeMax = !filterAgeMax || (s.age && s.age <= parseInt(filterAgeMax));
+    return matchSearch && matchCountry && matchGender && matchAgeMin && matchAgeMax;
+  });
+
+  const uniqueCountries = [...new Set(students.map(s => s.country).filter(Boolean))].sort();
 
   const updateStudentPoints = async (userId: string, newTotal: number) => {
     const currentTotal = getStudentPoints(userId);
@@ -170,21 +204,42 @@ export default function AdminPanel() {
     if (!resetPasswordStudent || !newPassword) return;
     setResettingPassword(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke('admin-reset-password', {
         body: { user_id: resetPasswordStudent.user_id, new_password: newPassword },
       });
       if (res.error) throw new Error(res.error.message || 'Failed to reset password');
       if (res.data?.error) throw new Error(res.data.error);
       toast.success(`Password reset for ${resetPasswordStudent.full_name || 'student'}!`);
-      setResetPasswordStudent(null);
-      setNewPassword('');
+      setResetPasswordStudent(null); setNewPassword('');
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setResettingPassword(false);
     }
   };
+
+  // Export to Excel
+  const exportStudentsToExcel = () => {
+    const data = filteredStudents.map(s => ({
+      'Name': s.full_name || 'N/A',
+      'Country': s.country || 'N/A',
+      'City': s.city || 'N/A',
+      'Gender': s.gender || 'N/A',
+      'Age': s.age || 'N/A',
+      'Phone': s.phone || 'N/A',
+      'Points': getStudentPoints(s.user_id),
+      'Lessons Completed': getStudentProgress(s.user_id),
+      'Joined': new Date(s.created_at).toLocaleDateString(),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([buf], { type: 'application/octet-stream' }), `students_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success('Excel exported!');
+  };
+
+  const filteredLessons = lessons.filter(l => l.title.toLowerCase().includes(searchLessons.toLowerCase()));
 
   return (
     <div className="min-h-screen bg-background">
@@ -205,7 +260,7 @@ export default function AdminPanel() {
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>
             <TabsTrigger value="gifts">Gifts</TabsTrigger>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="staff">Staff</TabsTrigger>
           </TabsList>
 
           {/* LESSONS TAB */}
@@ -298,9 +353,11 @@ export default function AdminPanel() {
                       <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canDelete && (
+                        <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -333,11 +390,17 @@ export default function AdminPanel() {
 
           {/* STUDENTS TAB */}
           <TabsContent value="students" className="space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+            <div className="flex gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search students..." value={searchStudents} onChange={e => setSearchStudents(e.target.value)} className="pl-9" />
               </div>
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                <Filter className="h-4 w-4 mr-1" /> Filters
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportStudentsToExcel}>
+                <Download className="h-4 w-4 mr-1" /> Export Excel
+              </Button>
               <Dialog open={dialogOpen === 'student'} onOpenChange={o => setDialogOpen(o ? 'student' : '')}>
                 <DialogTrigger asChild>
                   <Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />Add Student</Button>
@@ -359,44 +422,94 @@ export default function AdminPanel() {
               </Dialog>
             </div>
 
+            {/* Filters Panel */}
+            {showFilters && (
+              <Card className="glass-card">
+                <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Country</label>
+                    <Select value={filterCountry} onValueChange={setFilterCountry}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Countries</SelectItem>
+                        {uniqueCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
+                    <Select value={filterGender} onValueChange={setFilterGender}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Age Min</label>
+                    <Input type="number" placeholder="Min" value={filterAgeMin} onChange={e => setFilterAgeMin(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Age Max</label>
+                    <Input type="number" placeholder="Max" value={filterAgeMax} onChange={e => setFilterAgeMax(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <p className="text-xs text-muted-foreground">{filteredStudents.length} student(s) found</p>
+
             {filteredStudents.map(student => (
               <Card key={student.id} className="glass-card">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{student.full_name || 'No name'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {student.city && `${student.city}, `}{student.country || ''} • Joined: {new Date(student.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="text-center">
-                      {editingPoints?.userId === student.user_id ? (
-                        <div className="flex items-center gap-1">
-                          <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
-                            onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
-                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
-                          <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
-                          <Pencil className="h-3 w-3 text-muted-foreground" />
-                        </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold truncate">{student.full_name || 'No name'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {student.gender && <span className="capitalize">{student.gender}</span>}
+                        {student.age && <span> • Age {student.age}</span>}
+                        {student.country && <span> • {student.country}</span>}
+                        {student.city && <span>, {student.city}</span>}
+                        {student.phone && <span> • 📱 {student.phone}</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Joined: {new Date(student.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm flex-shrink-0">
+                      <div className="text-center">
+                        {editingPoints?.userId === student.user_id ? (
+                          <div className="flex items-center gap-1">
+                            <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
+                              onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
+                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
+                            <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">Points</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
+                        <p className="text-xs text-muted-foreground">Lessons</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {canDelete && (
+                        <Button variant="ghost" size="sm" onClick={() => deleteStudent(student.user_id)} className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
-                      <p className="text-xs text-muted-foreground">Points</p>
                     </div>
-                    <div className="text-center">
-                      <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
-                      <p className="text-xs text-muted-foreground">Lessons</p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
-                      <KeyRound className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteStudent(student.user_id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -428,14 +541,7 @@ export default function AdminPanel() {
                       Reset password for <strong>{resetPasswordStudent.full_name || 'student'}</strong>
                     </p>
                     <div className="relative">
-                      <Input
-                        type={showNewPassword ? 'text' : 'password'}
-                        placeholder="New Password (min 6 chars)"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        minLength={6}
-                        className="pr-10"
-                      />
+                      <Input type={showNewPassword ? 'text' : 'password'} placeholder="New Password (min 6 chars)" value={newPassword} onChange={e => setNewPassword(e.target.value)} minLength={6} className="pr-10" />
                       <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -478,25 +584,72 @@ export default function AdminPanel() {
             </Dialog>
           </TabsContent>
 
-          {/* EMPLOYEES TAB */}
-          <TabsContent value="employees" className="space-y-4">
-            <Dialog open={dialogOpen === 'employee'} onOpenChange={o => setDialogOpen(o ? 'employee' : '')}>
-              <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />{t('admin.manageEmployees', language)}</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Add Employee</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <Input placeholder="Full Name" value={newEmployee.full_name} onChange={e => setNewEmployee({ ...newEmployee, full_name: e.target.value })} />
-                  <Input type="email" placeholder="Email" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} />
-                  <div className="relative">
-                    <Input type={showEmployeePassword ? 'text' : 'password'} placeholder="Password" value={newEmployee.password} onChange={e => setNewEmployee({ ...newEmployee, password: e.target.value })} className="pr-10" />
-                    <button type="button" onClick={() => setShowEmployeePassword(!showEmployeePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
-                      {showEmployeePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+          {/* STAFF TAB */}
+          <TabsContent value="staff" className="space-y-4">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Dialog open={dialogOpen === 'staff'} onOpenChange={o => setDialogOpen(o ? 'staff' : '')}>
+                <DialogTrigger asChild><Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />Add Staff</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add Staff Member</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <Input placeholder="Full Name" value={newStaff.full_name} onChange={e => setNewStaff({ ...newStaff, full_name: e.target.value })} />
+                    <Input type="email" placeholder="Email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} />
+                    <div className="relative">
+                      <Input type={showStaffPassword ? 'text' : 'password'} placeholder="Password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} className="pr-10" />
+                      <button type="button" onClick={() => setShowStaffPassword(!showStaffPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                        {showStaffPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Select value={newStaff.role} onValueChange={v => setNewStaff({ ...newStaff, role: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="employee">
+                          <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-blue-500" /> Employee (Full access)</span>
+                        </SelectItem>
+                        <SelectItem value="volunteer">
+                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Add/edit only)</span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={addStaffMember} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
-                  <Button onClick={addEmployee} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Role Legend */}
+            <div className="flex gap-4 flex-wrap">
+              {Object.entries(ROLE_CONFIG).map(([key, cfg]) => {
+                const Icon = cfg.icon;
+                return (
+                  <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Icon className={`h-4 w-4 ${cfg.color}`} />
+                    <span className="font-medium">{cfg.label}</span> — {cfg.desc}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Staff List */}
+            {staffRoles.filter(r => r.role !== 'student').map(role => {
+              const profile = students.find(s => s.user_id === role.user_id);
+              const cfg = ROLE_CONFIG[role.role as keyof typeof ROLE_CONFIG];
+              if (!cfg) return null;
+              const Icon = cfg.icon;
+              return (
+                <Card key={role.id} className="glass-card">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Icon className={`h-5 w-5 ${cfg.color}`} />
+                      <div>
+                        <p className="font-semibold">{profile?.full_name || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">{cfg.label} — {cfg.desc}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </TabsContent>
         </Tabs>
       </main>
