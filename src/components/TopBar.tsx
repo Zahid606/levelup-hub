@@ -22,7 +22,7 @@ export function TopBar() {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <img src="/logo.png" alt="Misk-ul-Kalam" className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
-          <span className="font-heading text-lg font-bold leading-tight">
+          <span className="font-heading text-lg font-bold leading-tight hidden sm:block">
             <span className="text-gradient">Misk-ul-Kalam</span>
           </span>
         </Link>
