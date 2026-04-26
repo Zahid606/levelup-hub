@@ -326,11 +326,19 @@ export default function AdminPanel() {
                     <Input placeholder="سوال (Urdu)" value={newQuiz.question_ur} onChange={e => setNewQuiz({ ...newQuiz, question_ur: e.target.value })} />
                     <Input placeholder="প্রশ্ন (Bengali)" value={newQuiz.question_bn} onChange={e => setNewQuiz({ ...newQuiz, question_bn: e.target.value })} />
                     {newQuiz.options.map((opt, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        <span className="text-sm font-medium w-6">{String.fromCharCode(65 + i)}</span>
-                        <Input placeholder={`Option ${i + 1}`} value={opt} onChange={e => {
+                      <div key={i} className="rounded-md border border-border p-2 space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground">Option {String.fromCharCode(65 + i)}</div>
+                        <Input placeholder={`Answer ${String.fromCharCode(65 + i)} (English)`} value={opt} onChange={e => {
                           const opts = [...newQuiz.options]; opts[i] = e.target.value;
                           setNewQuiz({ ...newQuiz, options: opts });
+                        }} />
+                        <Input dir="rtl" placeholder={`جواب ${String.fromCharCode(65 + i)} (Urdu)`} value={newQuiz.options_ur[i] || ''} onChange={e => {
+                          const opts = [...newQuiz.options_ur]; opts[i] = e.target.value;
+                          setNewQuiz({ ...newQuiz, options_ur: opts });
+                        }} />
+                        <Input placeholder={`উত্তর ${String.fromCharCode(65 + i)} (Bengali)`} value={newQuiz.options_bn[i] || ''} onChange={e => {
+                          const opts = [...newQuiz.options_bn]; opts[i] = e.target.value;
+                          setNewQuiz({ ...newQuiz, options_bn: opts });
                         }} />
                       </div>
                     ))}
