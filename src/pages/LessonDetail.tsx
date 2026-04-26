@@ -217,6 +217,15 @@ export default function LessonDetail() {
     return q.question;
   };
 
+  const getOptions = (q: any): string[] => {
+    const en = (q.options as string[]) || [];
+    const ur = (q.options_ur as string[]) || [];
+    const bn = (q.options_bn as string[]) || [];
+    if (language === 'ur') return en.map((o, i) => (ur[i] && ur[i].trim()) ? ur[i] : o);
+    if (language === 'bn') return en.map((o, i) => (bn[i] && bn[i].trim()) ? bn[i] : o);
+    return en;
+  };
+
   if (!lesson) return <div className="min-h-screen bg-background"><TopBar /><div className="container py-8 text-center text-muted-foreground">{t('general.loading', language)}</div></div>;
 
   const getLessonTitle = () => {
@@ -298,7 +307,7 @@ export default function LessonDetail() {
                       <p className="text-sm text-muted-foreground">You already answered this question.</p>
                     )}
                     <div className="space-y-2">
-                      {(questions[currentQ].options as string[])?.map((opt: string, i: number) => (
+                      {getOptions(questions[currentQ])?.map((opt: string, i: number) => (
                         <button key={i} onClick={() => !answered && setSelectedAnswer(i)}
                           disabled={answered || answeredQuestions.has(questions[currentQ].id)}
                           className={`w-full text-left p-4 rounded-lg border transition-all ${

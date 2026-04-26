@@ -90,6 +90,7 @@ export type Database = {
           description_ur: string | null
           id: string
           is_published: boolean
+          lesson_number: number | null
           sort_order: number
           title: string
           title_bn: string | null
@@ -103,6 +104,7 @@ export type Database = {
           description_ur?: string | null
           id?: string
           is_published?: boolean
+          lesson_number?: number | null
           sort_order?: number
           title: string
           title_bn?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           description_ur?: string | null
           id?: string
           is_published?: boolean
+          lesson_number?: number | null
           sort_order?: number
           title?: string
           title_bn?: string | null
@@ -214,6 +217,8 @@ export type Database = {
           id: string
           lesson_id: string
           options: Json
+          options_bn: Json
+          options_ur: Json
           points: number
           question: string
           question_bn: string | null
@@ -226,6 +231,8 @@ export type Database = {
           id?: string
           lesson_id: string
           options?: Json
+          options_bn?: Json
+          options_ur?: Json
           points?: number
           question: string
           question_bn?: string | null
@@ -238,6 +245,8 @@ export type Database = {
           id?: string
           lesson_id?: string
           options?: Json
+          options_bn?: Json
+          options_ur?: Json
           points?: number
           question?: string
           question_bn?: string | null

@@ -36,10 +36,10 @@ export default function AdminPanel() {
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
 
-  const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
+  const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '' });
-  const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
+  const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
   const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
@@ -82,10 +82,21 @@ export default function AdminPanel() {
   }
 
   const addLesson = async () => {
-    const { error } = await supabase.from('lessons').insert({ ...newLesson, sort_order: lessons.length, is_published: true });
+    const payload: any = {
+      title: newLesson.title,
+      title_ur: newLesson.title_ur,
+      title_bn: newLesson.title_bn,
+      description: newLesson.description,
+      description_ur: newLesson.description_ur,
+      description_bn: newLesson.description_bn,
+      lesson_number: newLesson.lesson_number ? parseInt(newLesson.lesson_number) : null,
+      sort_order: lessons.length,
+      is_published: true,
+    };
+    const { error } = await supabase.from('lessons').insert(payload);
     if (error) { toast.error(error.message); return; }
     toast.success('Lesson added!');
-    setNewLesson({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
+    setNewLesson({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
     setDialogOpen(''); loadAll();
   };
 
@@ -94,7 +105,8 @@ export default function AdminPanel() {
     const { error } = await supabase.from('lessons').update({
       title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
       description: editingLesson.description, description_ur: editingLesson.description_ur, description_bn: editingLesson.description_bn,
-    }).eq('id', editingLesson.id);
+      lesson_number: editingLesson.lesson_number === '' || editingLesson.lesson_number == null ? null : parseInt(String(editingLesson.lesson_number)),
+    } as any).eq('id', editingLesson.id);
     if (error) { toast.error(error.message); return; }
     toast.success('Lesson updated!');
     setEditingLesson(null); loadAll();
@@ -111,11 +123,14 @@ export default function AdminPanel() {
     const { error } = await supabase.from('quiz_questions').insert({
       lesson_id: newQuiz.lesson_id, question: newQuiz.question,
       question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
-      options: newQuiz.options, correct_answer: newQuiz.correct_answer, points: newQuiz.points,
-    });
+      options: newQuiz.options,
+      options_ur: newQuiz.options_ur,
+      options_bn: newQuiz.options_bn,
+      correct_answer: newQuiz.correct_answer, points: newQuiz.points,
+    } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Quiz question added!');
-    setNewQuiz({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
+    setNewQuiz({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
     setDialogOpen('');
   };
 
@@ -271,6 +286,7 @@ export default function AdminPanel() {
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addLesson', language)}</DialogTitle></DialogHeader>
                   <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Input type="number" placeholder="Lesson Number (e.g. 1, 2, 3)" value={newLesson.lesson_number} onChange={e => setNewLesson({ ...newLesson, lesson_number: e.target.value })} />
                     <Input placeholder="Title (English)" value={newLesson.title} onChange={e => setNewLesson({ ...newLesson, title: e.target.value })} />
                     <Input placeholder="عنوان (Urdu)" value={newLesson.title_ur} onChange={e => setNewLesson({ ...newLesson, title_ur: e.target.value })} />
                     <Input placeholder="শিরোনাম (Bengali)" value={newLesson.title_bn} onChange={e => setNewLesson({ ...newLesson, title_bn: e.target.value })} />
@@ -311,11 +327,19 @@ export default function AdminPanel() {
                     <Input placeholder="سوال (Urdu)" value={newQuiz.question_ur} onChange={e => setNewQuiz({ ...newQuiz, question_ur: e.target.value })} />
                     <Input placeholder="প্রশ্ন (Bengali)" value={newQuiz.question_bn} onChange={e => setNewQuiz({ ...newQuiz, question_bn: e.target.value })} />
                     {newQuiz.options.map((opt, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        <span className="text-sm font-medium w-6">{String.fromCharCode(65 + i)}</span>
-                        <Input placeholder={`Option ${i + 1}`} value={opt} onChange={e => {
+                      <div key={i} className="rounded-md border border-border p-2 space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground">Option {String.fromCharCode(65 + i)}</div>
+                        <Input placeholder={`Answer ${String.fromCharCode(65 + i)} (English)`} value={opt} onChange={e => {
                           const opts = [...newQuiz.options]; opts[i] = e.target.value;
                           setNewQuiz({ ...newQuiz, options: opts });
+                        }} />
+                        <Input dir="rtl" placeholder={`جواب ${String.fromCharCode(65 + i)} (Urdu)`} value={newQuiz.options_ur[i] || ''} onChange={e => {
+                          const opts = [...newQuiz.options_ur]; opts[i] = e.target.value;
+                          setNewQuiz({ ...newQuiz, options_ur: opts });
+                        }} />
+                        <Input placeholder={`উত্তর ${String.fromCharCode(65 + i)} (Bengali)`} value={newQuiz.options_bn[i] || ''} onChange={e => {
+                          const opts = [...newQuiz.options_bn]; opts[i] = e.target.value;
+                          setNewQuiz({ ...newQuiz, options_bn: opts });
                         }} />
                       </div>
                     ))}
@@ -340,7 +364,7 @@ export default function AdminPanel() {
                 <Card key={lesson.id} className="glass-card">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-mono text-muted-foreground">#{i + 1}</span>
+                      <span className="text-sm font-mono text-muted-foreground">{lesson.lesson_number != null ? `#${lesson.lesson_number}` : `#${i + 1}`}</span>
                       <div>
                         <p className="font-semibold">{lesson.title}</p>
                         {lesson.title_ur && <p className="text-xs text-muted-foreground" dir="rtl">{lesson.title_ur}</p>}
@@ -369,6 +393,7 @@ export default function AdminPanel() {
                 <DialogHeader><DialogTitle>Edit Lesson</DialogTitle></DialogHeader>
                 {editingLesson && (
                   <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Input type="number" placeholder="Lesson Number" value={editingLesson.lesson_number ?? ''} onChange={e => setEditingLesson({ ...editingLesson, lesson_number: e.target.value })} />
                     <Input placeholder="Title (English)" value={editingLesson.title} onChange={e => setEditingLesson({ ...editingLesson, title: e.target.value })} />
                     <Input placeholder="عنوان (Urdu)" value={editingLesson.title_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, title_ur: e.target.value })} />
                     <Input placeholder="শিরোনাম (Bengali)" value={editingLesson.title_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, title_bn: e.target.value })} />
