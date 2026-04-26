@@ -36,10 +36,10 @@ export default function AdminPanel() {
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
 
-  const [newLesson, setNewLesson] = useState({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
+  const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '' });
-  const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
+  const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
   const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
@@ -82,10 +82,21 @@ export default function AdminPanel() {
   }
 
   const addLesson = async () => {
-    const { error } = await supabase.from('lessons').insert({ ...newLesson, sort_order: lessons.length, is_published: true });
+    const payload: any = {
+      title: newLesson.title,
+      title_ur: newLesson.title_ur,
+      title_bn: newLesson.title_bn,
+      description: newLesson.description,
+      description_ur: newLesson.description_ur,
+      description_bn: newLesson.description_bn,
+      lesson_number: newLesson.lesson_number ? parseInt(newLesson.lesson_number) : null,
+      sort_order: lessons.length,
+      is_published: true,
+    };
+    const { error } = await supabase.from('lessons').insert(payload);
     if (error) { toast.error(error.message); return; }
     toast.success('Lesson added!');
-    setNewLesson({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '' });
+    setNewLesson({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
     setDialogOpen(''); loadAll();
   };
 
@@ -94,7 +105,8 @@ export default function AdminPanel() {
     const { error } = await supabase.from('lessons').update({
       title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
       description: editingLesson.description, description_ur: editingLesson.description_ur, description_bn: editingLesson.description_bn,
-    }).eq('id', editingLesson.id);
+      lesson_number: editingLesson.lesson_number === '' || editingLesson.lesson_number == null ? null : parseInt(String(editingLesson.lesson_number)),
+    } as any).eq('id', editingLesson.id);
     if (error) { toast.error(error.message); return; }
     toast.success('Lesson updated!');
     setEditingLesson(null); loadAll();
@@ -111,11 +123,14 @@ export default function AdminPanel() {
     const { error } = await supabase.from('quiz_questions').insert({
       lesson_id: newQuiz.lesson_id, question: newQuiz.question,
       question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
-      options: newQuiz.options, correct_answer: newQuiz.correct_answer, points: newQuiz.points,
-    });
+      options: newQuiz.options,
+      options_ur: newQuiz.options_ur,
+      options_bn: newQuiz.options_bn,
+      correct_answer: newQuiz.correct_answer, points: newQuiz.points,
+    } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Quiz question added!');
-    setNewQuiz({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], correct_answer: 0, points: 10 });
+    setNewQuiz({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
     setDialogOpen('');
   };
 
