@@ -364,7 +364,7 @@ export default function AdminPanel() {
                 <Card key={lesson.id} className="glass-card">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-mono text-muted-foreground">#{i + 1}</span>
+                      <span className="text-sm font-mono text-muted-foreground">{lesson.lesson_number != null ? `#${lesson.lesson_number}` : `#${i + 1}`}</span>
                       <div>
                         <p className="font-semibold">{lesson.title}</p>
                         {lesson.title_ur && <p className="text-xs text-muted-foreground" dir="rtl">{lesson.title_ur}</p>}
@@ -393,6 +393,7 @@ export default function AdminPanel() {
                 <DialogHeader><DialogTitle>Edit Lesson</DialogTitle></DialogHeader>
                 {editingLesson && (
                   <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Input type="number" placeholder="Lesson Number" value={editingLesson.lesson_number ?? ''} onChange={e => setEditingLesson({ ...editingLesson, lesson_number: e.target.value })} />
                     <Input placeholder="Title (English)" value={editingLesson.title} onChange={e => setEditingLesson({ ...editingLesson, title: e.target.value })} />
                     <Input placeholder="عنوان (Urdu)" value={editingLesson.title_ur || ''} onChange={e => setEditingLesson({ ...editingLesson, title_ur: e.target.value })} />
                     <Input placeholder="শিরোনাম (Bengali)" value={editingLesson.title_bn || ''} onChange={e => setEditingLesson({ ...editingLesson, title_bn: e.target.value })} />
