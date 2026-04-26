@@ -286,6 +286,7 @@ export default function AdminPanel() {
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addLesson', language)}</DialogTitle></DialogHeader>
                   <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Input type="number" placeholder="Lesson Number (e.g. 1, 2, 3)" value={newLesson.lesson_number} onChange={e => setNewLesson({ ...newLesson, lesson_number: e.target.value })} />
                     <Input placeholder="Title (English)" value={newLesson.title} onChange={e => setNewLesson({ ...newLesson, title: e.target.value })} />
                     <Input placeholder="عنوان (Urdu)" value={newLesson.title_ur} onChange={e => setNewLesson({ ...newLesson, title_ur: e.target.value })} />
                     <Input placeholder="শিরোনাম (Bengali)" value={newLesson.title_bn} onChange={e => setNewLesson({ ...newLesson, title_bn: e.target.value })} />
