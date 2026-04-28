@@ -5,9 +5,10 @@ import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/TopBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
-import { BookOpen, Trophy, Star, Gift, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Trophy, Star, Gift, CheckCircle2, Search } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user, language } = useAuth();
