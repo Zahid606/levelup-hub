@@ -257,14 +257,15 @@ export default function AdminPanel() {
   const exportStudentsToExcel = () => {
     const data = filteredStudents.map(s => ({
       'Name': s.full_name || 'N/A',
+      'Email': s.email || 'N/A',
+      'Phone': s.phone || 'N/A',
       'Country': s.country || 'N/A',
       'City': s.city || 'N/A',
       'Gender': s.gender || 'N/A',
       'Age': s.age || 'N/A',
-      'Phone': s.phone || 'N/A',
       'Points': getStudentPoints(s.user_id),
       'Lessons Completed': getStudentProgress(s.user_id),
-      'Joined': new Date(s.created_at).toLocaleDateString(),
+      'Joined': s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
