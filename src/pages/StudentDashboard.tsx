@@ -16,6 +16,7 @@ export default function StudentDashboard() {
   const [progress, setProgress] = useState<any[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [gifts, setGifts] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!user) return;
