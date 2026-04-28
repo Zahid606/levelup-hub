@@ -10,6 +10,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import LessonDetail from "./pages/LessonDetail";
 import Leaderboard from "./pages/Leaderboard";
 import AdminPanel from "./pages/AdminPanel";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
     <Route path="/lesson/:id" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
     <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+    <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
     <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
