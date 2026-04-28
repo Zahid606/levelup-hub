@@ -136,13 +136,11 @@ export default function Login() {
             </Button>
           </form>
 
-          {isSignup && (
-            <div className="mt-4 text-center text-sm">
-              <button onClick={() => setIsSignup(false)} className="text-primary hover:underline">
-                {t('auth.hasAccount', language)}
-              </button>
-            </div>
-          )}
+          <div className="mt-4 text-center text-sm">
+            <button onClick={() => setIsSignup(!isSignup)} className="text-primary hover:underline">
+              {isSignup ? t('auth.hasAccount', language) : t('auth.signup', language)}
+            </button>
+          </div>
           <div className="mt-2 text-center">
             <Link to="/admin-login" className="text-xs text-muted-foreground hover:text-foreground">
               {t('auth.adminLogin', language)} →
