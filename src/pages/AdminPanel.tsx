@@ -57,9 +57,14 @@ export default function AdminPanel() {
 
   // Student filters
   const [filterCountry, setFilterCountry] = useState('all');
+  const [filterCity, setFilterCity] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeMin, setFilterAgeMin] = useState('');
   const [filterAgeMax, setFilterAgeMax] = useState('');
+  const [filterEmail, setFilterEmail] = useState('');
+  const [filterPhone, setFilterPhone] = useState('');
+  const [filterJoinedFrom, setFilterJoinedFrom] = useState('');
+  const [filterJoinedTo, setFilterJoinedTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
@@ -196,15 +201,30 @@ export default function AdminPanel() {
 
   // Filtered students
   const filteredStudents = students.filter(s => {
-    const matchSearch = (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase());
+    const q = searchStudents.toLowerCase();
+    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q);
     const matchCountry = filterCountry === 'all' || s.country === filterCountry;
+    const matchCity = filterCity === 'all' || s.city === filterCity;
     const matchGender = filterGender === 'all' || s.gender === filterGender;
     const matchAgeMin = !filterAgeMin || (s.age && s.age >= parseInt(filterAgeMin));
     const matchAgeMax = !filterAgeMax || (s.age && s.age <= parseInt(filterAgeMax));
-    return matchSearch && matchCountry && matchGender && matchAgeMin && matchAgeMax;
+    const matchEmail = !filterEmail || (s.email || '').toLowerCase().includes(filterEmail.toLowerCase());
+    const matchPhone = !filterPhone || (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase());
+    const joined = s.created_at ? new Date(s.created_at) : null;
+    const matchFrom = !filterJoinedFrom || (joined && joined >= new Date(filterJoinedFrom));
+    const matchTo = !filterJoinedTo || (joined && joined <= new Date(filterJoinedTo + 'T23:59:59'));
+    return matchSearch && matchCountry && matchCity && matchGender && matchAgeMin && matchAgeMax && matchEmail && matchPhone && matchFrom && matchTo;
   });
 
   const uniqueCountries = [...new Set(students.map(s => s.country).filter(Boolean))].sort();
+  const uniqueCities = [...new Set(students.filter(s => filterCountry === 'all' || s.country === filterCountry).map(s => s.city).filter(Boolean))].sort();
+
+  const clearFilters = () => {
+    setFilterCountry('all'); setFilterCity('all'); setFilterGender('all');
+    setFilterAgeMin(''); setFilterAgeMax(''); setFilterEmail(''); setFilterPhone('');
+    setFilterJoinedFrom(''); setFilterJoinedTo('');
+  };
+
 
   const updateStudentPoints = async (userId: string, newTotal: number) => {
     const currentTotal = getStudentPoints(userId);
@@ -237,14 +257,15 @@ export default function AdminPanel() {
   const exportStudentsToExcel = () => {
     const data = filteredStudents.map(s => ({
       'Name': s.full_name || 'N/A',
+      'Email': s.email || 'N/A',
+      'Phone': s.phone || 'N/A',
       'Country': s.country || 'N/A',
       'City': s.city || 'N/A',
       'Gender': s.gender || 'N/A',
       'Age': s.age || 'N/A',
-      'Phone': s.phone || 'N/A',
       'Points': getStudentPoints(s.user_id),
       'Lessons Completed': getStudentProgress(s.user_id),
-      'Joined': new Date(s.created_at).toLocaleDateString(),
+      'Joined': s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -454,35 +475,68 @@ export default function AdminPanel() {
             {/* Filters Panel */}
             {showFilters && (
               <Card className="glass-card">
-                <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Country</label>
-                    <Select value={filterCountry} onValueChange={setFilterCountry}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Countries</SelectItem>
-                        {uniqueCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Country</label>
+                      <Select value={filterCountry} onValueChange={(v) => { setFilterCountry(v); setFilterCity('all'); }}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Countries</SelectItem>
+                          {uniqueCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">City</label>
+                      <Select value={filterCity} onValueChange={setFilterCity}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Cities</SelectItem>
+                          {uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
+                      <Select value={filterGender} onValueChange={setFilterGender}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Age Min</label>
+                        <Input type="number" placeholder="Min" value={filterAgeMin} onChange={e => setFilterAgeMin(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Age Max</label>
+                        <Input type="number" placeholder="Max" value={filterAgeMax} onChange={e => setFilterAgeMax(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                      <Input placeholder="Search email..." value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
+                      <Input placeholder="Search phone..." value={filterPhone} onChange={e => setFilterPhone(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Joined From</label>
+                      <Input type="date" value={filterJoinedFrom} onChange={e => setFilterJoinedFrom(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Joined To</label>
+                      <Input type="date" value={filterJoinedTo} onChange={e => setFilterJoinedTo(e.target.value)} className="h-8 text-xs" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
-                    <Select value={filterGender} onValueChange={setFilterGender}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Age Min</label>
-                    <Input type="number" placeholder="Min" value={filterAgeMin} onChange={e => setFilterAgeMin(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Age Max</label>
-                    <Input type="number" placeholder="Max" value={filterAgeMax} onChange={e => setFilterAgeMax(e.target.value)} className="h-8 text-xs" />
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -503,8 +557,9 @@ export default function AdminPanel() {
                         {student.city && <span>, {student.city}</span>}
                         {student.phone && <span> • 📱 {student.phone}</span>}
                       </p>
+                      {student.email && <p className="text-xs text-muted-foreground truncate">✉️ {student.email}</p>}
                       <p className="text-xs text-muted-foreground">
-                        Joined: {new Date(student.created_at).toLocaleDateString()}
+                        Joined: {student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-sm flex-shrink-0">
