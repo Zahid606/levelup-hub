@@ -201,15 +201,30 @@ export default function AdminPanel() {
 
   // Filtered students
   const filteredStudents = students.filter(s => {
-    const matchSearch = (s.full_name || '').toLowerCase().includes(searchStudents.toLowerCase());
+    const q = searchStudents.toLowerCase();
+    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q);
     const matchCountry = filterCountry === 'all' || s.country === filterCountry;
+    const matchCity = filterCity === 'all' || s.city === filterCity;
     const matchGender = filterGender === 'all' || s.gender === filterGender;
     const matchAgeMin = !filterAgeMin || (s.age && s.age >= parseInt(filterAgeMin));
     const matchAgeMax = !filterAgeMax || (s.age && s.age <= parseInt(filterAgeMax));
-    return matchSearch && matchCountry && matchGender && matchAgeMin && matchAgeMax;
+    const matchEmail = !filterEmail || (s.email || '').toLowerCase().includes(filterEmail.toLowerCase());
+    const matchPhone = !filterPhone || (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase());
+    const joined = s.created_at ? new Date(s.created_at) : null;
+    const matchFrom = !filterJoinedFrom || (joined && joined >= new Date(filterJoinedFrom));
+    const matchTo = !filterJoinedTo || (joined && joined <= new Date(filterJoinedTo + 'T23:59:59'));
+    return matchSearch && matchCountry && matchCity && matchGender && matchAgeMin && matchAgeMax && matchEmail && matchPhone && matchFrom && matchTo;
   });
 
   const uniqueCountries = [...new Set(students.map(s => s.country).filter(Boolean))].sort();
+  const uniqueCities = [...new Set(students.filter(s => filterCountry === 'all' || s.country === filterCountry).map(s => s.city).filter(Boolean))].sort();
+
+  const clearFilters = () => {
+    setFilterCountry('all'); setFilterCity('all'); setFilterGender('all');
+    setFilterAgeMin(''); setFilterAgeMax(''); setFilterEmail(''); setFilterPhone('');
+    setFilterJoinedFrom(''); setFilterJoinedTo('');
+  };
+
 
   const updateStudentPoints = async (userId: string, newTotal: number) => {
     const currentTotal = getStudentPoints(userId);
