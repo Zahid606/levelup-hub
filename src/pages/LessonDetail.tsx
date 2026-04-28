@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle2, XCircle, Play, Lock, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Play, Lock, Star, List } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -131,8 +131,10 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
 
 export default function LessonDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, language } = useAuth();
   const [lesson, setLesson] = useState<any>(null);
+  const [allLessons, setAllLessons] = useState<any[]>([]);
   const [content, setContent] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
@@ -145,17 +147,20 @@ export default function LessonDetail() {
   useEffect(() => {
     if (!id || !user) return;
     loadLesson();
+    window.scrollTo({ top: 0 });
   }, [id, user]);
 
   async function loadLesson() {
-    const [lessonRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
+    const [lessonRes, allLessonsRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
       supabase.from('lessons').select('*').eq('id', id!).single(),
+      supabase.from('lessons').select('id, title, title_ur, title_bn, lesson_number, created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       supabase.from('lesson_content').select('*').eq('lesson_id', id!).order('sort_order'),
       supabase.from('quiz_questions').select('*').eq('lesson_id', id!).order('sort_order'),
       supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id),
       supabase.from('video_completions').select('content_id').eq('user_id', user!.id),
     ]);
     setLesson(lessonRes.data);
+    setAllLessons(allLessonsRes.data || []);
     setContent(contentRes.data || []);
     setQuestions(questionsRes.data || []);
     setAnsweredQuestions(new Set((answersRes.data || []).map(a => a.question_id)));
@@ -238,11 +243,37 @@ export default function LessonDetail() {
     <div className="min-h-screen bg-background" onContextMenu={e => e.preventDefault()}>
       <TopBar />
       <main className="container py-8 max-w-4xl space-y-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to Lessons
-        </Link>
-
-        <h1 className="text-3xl font-heading font-bold">{getLessonTitle()}</h1>
+        {(() => {
+          const idx = allLessons.findIndex(l => l.id === id);
+          const prev = idx > 0 ? allLessons[idx - 1] : null;
+          const next = idx >= 0 && idx < allLessons.length - 1 ? allLessons[idx + 1] : null;
+          const lessonNum = lesson.lesson_number ?? (idx >= 0 ? idx + 1 : null);
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1">
+                  <List className="h-4 w-4" /> {t('general.backToLessons', language)}
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={!prev} onClick={() => prev && navigate(`/lesson/${prev.id}`)} className="gap-1">
+                    <ArrowLeft className="h-4 w-4" /> {t('general.previous', language)}
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={!next} onClick={() => next && navigate(`/lesson/${next.id}`)} className="gap-1">
+                    {t('general.next', language)} <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                {lessonNum != null && (
+                  <p className="text-sm font-medium text-primary mb-1">
+                    {t('lessons.lesson', language)} {lessonNum}{allLessons.length > 0 && idx >= 0 ? ` / ${allLessons.length}` : ''}
+                  </p>
+                )}
+                <h1 className="text-3xl font-heading font-bold">{getLessonTitle()}</h1>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Videos */}
         {content.length > 0 && (

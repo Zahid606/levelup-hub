@@ -4,7 +4,7 @@ import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon, Sun, Trophy, Shield } from 'lucide-react';
+import { LogOut, Moon, Sun, Trophy, Shield, Mail } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
 
@@ -22,8 +22,8 @@ export function TopBar() {
     <header className="sticky top-0 z-50 glass-card border-b border-border/50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <img src={logoImg} alt="Misk-ul-Kalam" className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
-          <span className="hidden md:inline text-sm font-semibold text-foreground">Misk-ul-Kalam</span>
+          <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
+          <span className="hidden md:inline text-sm font-semibold text-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</span>
         </Link>
 
         {user && (
@@ -34,6 +34,10 @@ export function TopBar() {
             <Link to="/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
               <Trophy className="h-4 w-4" />
               {t('nav.leaderboard', language)}
+            </Link>
+            <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+              <Mail className="h-4 w-4" />
+              {t('nav.contact', language)}
             </Link>
             {(isAdmin || isEmployee || isVolunteer) && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
