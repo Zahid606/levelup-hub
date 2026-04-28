@@ -557,8 +557,9 @@ export default function AdminPanel() {
                         {student.city && <span>, {student.city}</span>}
                         {student.phone && <span> • 📱 {student.phone}</span>}
                       </p>
+                      {student.email && <p className="text-xs text-muted-foreground truncate">✉️ {student.email}</p>}
                       <p className="text-xs text-muted-foreground">
-                        Joined: {new Date(student.created_at).toLocaleDateString()}
+                        Joined: {student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-sm flex-shrink-0">
