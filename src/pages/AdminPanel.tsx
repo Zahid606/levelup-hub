@@ -38,7 +38,7 @@ export default function AdminPanel() {
 
   const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
-  const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '' });
+  const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '', video_points: 10 });
   const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
   const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
@@ -66,7 +66,7 @@ export default function AdminPanel() {
 
   async function loadAll() {
     const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
-      supabase.from('lessons').select('*').order('created_at', { ascending: false }),
+      supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       supabase.from('profiles').select('*'),
       supabase.from('user_progress').select('*'),
       supabase.from('user_points').select('*'),
@@ -113,10 +113,10 @@ export default function AdminPanel() {
   };
 
   const addVideo = async () => {
-    const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url });
+    const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url, video_points: newVideo.video_points } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Video added!');
-    setNewVideo({ lesson_id: '', title: '', youtube_url: '' }); setDialogOpen('');
+    setNewVideo({ lesson_id: '', title: '', youtube_url: '', video_points: 10 }); setDialogOpen('');
   };
 
   const addQuizQuestion = async () => {
@@ -309,6 +309,10 @@ export default function AdminPanel() {
                     </Select>
                     <Input placeholder="Video Title" value={newVideo.title} onChange={e => setNewVideo({ ...newVideo, title: e.target.value })} />
                     <Input placeholder="YouTube URL" value={newVideo.youtube_url} onChange={e => setNewVideo({ ...newVideo, youtube_url: e.target.value })} />
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-accent" />
+                      <Input type="number" min={0} max={1000} placeholder="Points awarded for watching" value={newVideo.video_points} onChange={e => setNewVideo({ ...newVideo, video_points: parseInt(e.target.value) || 0 })} />
+                    </div>
                     <Button onClick={addVideo} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
