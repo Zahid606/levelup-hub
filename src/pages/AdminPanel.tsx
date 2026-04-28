@@ -57,9 +57,14 @@ export default function AdminPanel() {
 
   // Student filters
   const [filterCountry, setFilterCountry] = useState('all');
+  const [filterCity, setFilterCity] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeMin, setFilterAgeMin] = useState('');
   const [filterAgeMax, setFilterAgeMax] = useState('');
+  const [filterEmail, setFilterEmail] = useState('');
+  const [filterPhone, setFilterPhone] = useState('');
+  const [filterJoinedFrom, setFilterJoinedFrom] = useState('');
+  const [filterJoinedTo, setFilterJoinedTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
