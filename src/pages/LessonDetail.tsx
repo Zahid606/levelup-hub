@@ -131,8 +131,10 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
 
 export default function LessonDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, language } = useAuth();
   const [lesson, setLesson] = useState<any>(null);
+  const [allLessons, setAllLessons] = useState<any[]>([]);
   const [content, setContent] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
@@ -145,17 +147,20 @@ export default function LessonDetail() {
   useEffect(() => {
     if (!id || !user) return;
     loadLesson();
+    window.scrollTo({ top: 0 });
   }, [id, user]);
 
   async function loadLesson() {
-    const [lessonRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
+    const [lessonRes, allLessonsRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
       supabase.from('lessons').select('*').eq('id', id!).single(),
+      supabase.from('lessons').select('id, title, title_ur, title_bn, lesson_number, created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       supabase.from('lesson_content').select('*').eq('lesson_id', id!).order('sort_order'),
       supabase.from('quiz_questions').select('*').eq('lesson_id', id!).order('sort_order'),
       supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id),
       supabase.from('video_completions').select('content_id').eq('user_id', user!.id),
     ]);
     setLesson(lessonRes.data);
+    setAllLessons(allLessonsRes.data || []);
     setContent(contentRes.data || []);
     setQuestions(questionsRes.data || []);
     setAnsweredQuestions(new Set((answersRes.data || []).map(a => a.question_id)));
