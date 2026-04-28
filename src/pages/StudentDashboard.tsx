@@ -105,10 +105,28 @@ export default function StudentDashboard() {
 
         {/* Lessons Grid */}
         <div>
-          <h2 className="text-2xl font-heading font-bold mb-6">{t('lessons.title', language)}</h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+            <h2 className="text-2xl font-heading font-bold">{t('lessons.title', language)}</h2>
+            <div className="relative md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder={t('general.search', language)} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lessons.map((lesson, i) => {
+            {lessons
+              .filter(lesson => {
+                if (!search.trim()) return true;
+                const q = search.toLowerCase();
+                return (
+                  (lesson.title || '').toLowerCase().includes(q) ||
+                  (lesson.title_ur || '').toLowerCase().includes(q) ||
+                  (lesson.title_bn || '').toLowerCase().includes(q) ||
+                  String(lesson.lesson_number ?? '').includes(q)
+                );
+              })
+              .map((lesson, i) => {
               const isCompleted = progress.some(p => p.lesson_id === lesson.id && p.completed);
+              const lessonNum = lesson.lesson_number ?? (i + 1);
               return (
                 <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
                   <Card className={`glass-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer ${isCompleted ? 'border-primary/30' : ''}`}
@@ -119,7 +137,7 @@ export default function StudentDashboard() {
                           {isCompleted ? <CheckCircle2 className="h-5 w-5 text-primary-foreground" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
                         </div>
                         <span className="text-xs font-medium text-muted-foreground">
-                          {t('lessons.lesson', language)} {i + 1}
+                          {t('lessons.lesson', language)} {lessonNum}
                         </span>
                       </div>
                       <h3 className="font-heading font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
