@@ -243,11 +243,37 @@ export default function LessonDetail() {
     <div className="min-h-screen bg-background" onContextMenu={e => e.preventDefault()}>
       <TopBar />
       <main className="container py-8 max-w-4xl space-y-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to Lessons
-        </Link>
-
-        <h1 className="text-3xl font-heading font-bold">{getLessonTitle()}</h1>
+        {(() => {
+          const idx = allLessons.findIndex(l => l.id === id);
+          const prev = idx > 0 ? allLessons[idx - 1] : null;
+          const next = idx >= 0 && idx < allLessons.length - 1 ? allLessons[idx + 1] : null;
+          const lessonNum = lesson.lesson_number ?? (idx >= 0 ? idx + 1 : null);
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1">
+                  <List className="h-4 w-4" /> {t('general.backToLessons', language)}
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={!prev} onClick={() => prev && navigate(`/lesson/${prev.id}`)} className="gap-1">
+                    <ArrowLeft className="h-4 w-4" /> {t('general.previous', language)}
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={!next} onClick={() => next && navigate(`/lesson/${next.id}`)} className="gap-1">
+                    {t('general.next', language)} <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                {lessonNum != null && (
+                  <p className="text-sm font-medium text-primary mb-1">
+                    {t('lessons.lesson', language)} {lessonNum}{allLessons.length > 0 && idx >= 0 ? ` / ${allLessons.length}` : ''}
+                  </p>
+                )}
+                <h1 className="text-3xl font-heading font-bold">{getLessonTitle()}</h1>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Videos */}
         {content.length > 0 && (
