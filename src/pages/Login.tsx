@@ -75,10 +75,10 @@ export default function Login() {
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
         <CardHeader className="text-center space-y-3">
           <div className="flex flex-col items-center gap-2">
-            <img src="/logo.png" alt="Misk-ul-Kalam" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+            <img src="/logo.png" alt={t('site.name', language)} className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
             <div>
-              <p className="font-heading font-bold text-lg text-gradient">Misk-ul-Kalam</p>
-              <p className="text-xs text-muted-foreground">پیغام قرآن وسنت</p>
+              <p className="font-heading font-bold text-lg text-gradient" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</p>
+              <p className="text-xs text-muted-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.tagline', language)}</p>
             </div>
           </div>
           <CardTitle className="text-xl font-heading">{isSignup ? t('auth.signup', language) : t('auth.login', language)}</CardTitle>
@@ -136,11 +136,13 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm">
-            <button onClick={() => setIsSignup(!isSignup)} className="text-primary hover:underline">
-              {isSignup ? t('auth.hasAccount', language) : t('auth.noAccount', language)}
-            </button>
-          </div>
+          {isSignup && (
+            <div className="mt-4 text-center text-sm">
+              <button onClick={() => setIsSignup(false)} className="text-primary hover:underline">
+                {t('auth.hasAccount', language)}
+              </button>
+            </div>
+          )}
           <div className="mt-2 text-center">
             <Link to="/admin-login" className="text-xs text-muted-foreground hover:text-foreground">
               {t('auth.adminLogin', language)} →
