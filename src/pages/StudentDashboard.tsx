@@ -114,17 +114,24 @@ export default function StudentDashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {lessons
-              .filter(lesson => {
+              .map((lesson, i) => ({ lesson, displayNum: lesson.lesson_number ?? (i + 1), idx: i }))
+              .filter(({ lesson, displayNum }) => {
                 if (!search.trim()) return true;
-                const q = search.toLowerCase();
+                const q = search.toLowerCase().trim();
+                const numOnly = q.replace(/[^0-9]/g, '');
                 return (
                   (lesson.title || '').toLowerCase().includes(q) ||
                   (lesson.title_ur || '').toLowerCase().includes(q) ||
                   (lesson.title_bn || '').toLowerCase().includes(q) ||
-                  String(lesson.lesson_number ?? '').includes(q)
+                  String(lesson.lesson_number ?? '').includes(q) ||
+                  String(displayNum).includes(q) ||
+                  (numOnly !== '' && (
+                    String(lesson.lesson_number ?? '') === numOnly ||
+                    String(displayNum) === numOnly
+                  ))
                 );
               })
-              .map((lesson, i) => {
+              .map(({ lesson, displayNum, idx: i }) => {
               const isCompleted = progress.some(p => p.lesson_id === lesson.id && p.completed);
               const lessonNum = lesson.lesson_number ?? (i + 1);
               return (
