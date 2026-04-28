@@ -58,6 +58,23 @@ const translations: Record<string, Record<Language, string>> = {
   'general.language': { en: 'Language', ur: 'زبان', bn: 'ভাষা' },
   'general.gifts': { en: 'Gifts', ur: 'تحائف', bn: 'উপহার' },
   'general.welcome': { en: 'Welcome back', ur: 'خوش آمدید', bn: 'স্বাগতম' },
+  'general.search': { en: 'Search lessons...', ur: 'اسباق تلاش کریں...', bn: 'পাঠ অনুসন্ধান...' },
+  'general.back': { en: 'Back', ur: 'واپس', bn: 'ফিরে যান' },
+  'general.previous': { en: 'Previous', ur: 'پچھلا', bn: 'পূর্ববর্তী' },
+  'general.next': { en: 'Next', ur: 'اگلا', bn: 'পরবর্তী' },
+  'general.backToLessons': { en: 'Back to Lessons', ur: 'اسباق پر واپس جائیں', bn: 'পাঠের তালিকায় ফিরুন' },
+
+  // Site
+  'site.name': { en: 'Misk-ul-Kalam', ur: 'مسک الکلام', bn: 'মিস্ক-উল-কালাম' },
+  'site.tagline': { en: 'Message of Quran & Sunnah', ur: 'پیغام قرآن وسنت', bn: 'কোরআন ও সুন্নাহর বার্তা' },
+
+  // Nav extras
+  'nav.contact': { en: 'Contact Us', ur: 'رابطہ کریں', bn: 'যোগাযোগ' },
+
+  // Contact page
+  'contact.title': { en: 'Misk-ul-Kalam Social Media Links', ur: 'مسک الکلام سوشل میڈیا لنکس', bn: 'মিস্ক-উল-কালাম সোশ্যাল মিডিয়া লিঙ্কস' },
+  'contact.followCta': { en: 'Like, follow and subscribe', ur: 'لائک، فالو اور سبسکرائب کریں', bn: 'লাইক, ফলো এবং সাবস্ক্রাইব করুন' },
+  'contact.supervision': { en: 'Under supervision of Sheikh Farooq Hayder, Preacher and Teacher, Yanbu Islamic Center', ur: 'زیر نگرانی شیخ فاروق حیدر، داعی و معلم، ینبع اسلامی مرکز', bn: 'শেখ ফারুক হায়দার, প্রচারক ও শিক্ষক, ইয়ানবু ইসলামিক সেন্টার তত্ত্বাবধানে' },
 };
 
 export function t(key: string, lang: Language = 'en'): string {
