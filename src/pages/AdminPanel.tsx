@@ -475,35 +475,68 @@ export default function AdminPanel() {
             {/* Filters Panel */}
             {showFilters && (
               <Card className="glass-card">
-                <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Country</label>
-                    <Select value={filterCountry} onValueChange={setFilterCountry}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Countries</SelectItem>
-                        {uniqueCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Country</label>
+                      <Select value={filterCountry} onValueChange={(v) => { setFilterCountry(v); setFilterCity('all'); }}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Countries</SelectItem>
+                          {uniqueCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">City</label>
+                      <Select value={filterCity} onValueChange={setFilterCity}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Cities</SelectItem>
+                          {uniqueCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
+                      <Select value={filterGender} onValueChange={setFilterGender}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Age Min</label>
+                        <Input type="number" placeholder="Min" value={filterAgeMin} onChange={e => setFilterAgeMin(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Age Max</label>
+                        <Input type="number" placeholder="Max" value={filterAgeMax} onChange={e => setFilterAgeMax(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                      <Input placeholder="Search email..." value={filterEmail} onChange={e => setFilterEmail(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
+                      <Input placeholder="Search phone..." value={filterPhone} onChange={e => setFilterPhone(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Joined From</label>
+                      <Input type="date" value={filterJoinedFrom} onChange={e => setFilterJoinedFrom(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Joined To</label>
+                      <Input type="date" value={filterJoinedTo} onChange={e => setFilterJoinedTo(e.target.value)} className="h-8 text-xs" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Gender</label>
-                    <Select value={filterGender} onValueChange={setFilterGender}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Age Min</label>
-                    <Input type="number" placeholder="Min" value={filterAgeMin} onChange={e => setFilterAgeMin(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Age Max</label>
-                    <Input type="number" placeholder="Max" value={filterAgeMax} onChange={e => setFilterAgeMax(e.target.value)} className="h-8 text-xs" />
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
                   </div>
                 </CardContent>
               </Card>
