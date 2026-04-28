@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle2, XCircle, Play, Lock, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Play, Lock, Star, List } from 'lucide-react';
 
 declare global {
   interface Window {
