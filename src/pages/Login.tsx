@@ -83,7 +83,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-xl font-heading">{isSignup ? t('auth.signup', language) : t('auth.login', language)}</CardTitle>
           <CardDescription>
-            {isSignup ? 'Create your student account' : 'Welcome back'}
+            {isSignup ? (language === 'ur' ? 'اپنا اسٹوڈنٹ اکاؤنٹ بنائیں' : language === 'bn' ? 'আপনার ছাত্র অ্যাকাউন্ট তৈরি করুন' : 'Create your student account') : t('general.welcome', language)}
           </CardDescription>
         </CardHeader>
         <CardContent>
