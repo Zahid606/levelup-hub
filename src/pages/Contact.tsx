@@ -133,6 +133,15 @@ export default function Contact() {
             </p>
           </CardContent>
         </Card>
+
+        <footer className="mt-10 text-left">
+          <div className="text-sm text-muted-foreground leading-relaxed">
+            <p className="font-semibold text-foreground">{t('contact.footer.under', language)}</p>
+            <p>{t('contact.footer.name', language)}</p>
+            <p>{t('contact.footer.role', language)}</p>
+            <p>{t('contact.footer.org', language)}</p>
+          </div>
+        </footer>
       </main>
     </div>
   );
