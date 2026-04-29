@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setTimeout(() => checkRoles(session.user.id), 0);
       } else {
-        setIsAdmin(false); setIsEmployee(false); setIsVolunteer(false);
+        setIsAdmin(false); setIsManager(false); setIsEmployee(false); setIsVolunteer(false);
       }
       setLoading(false);
     });
