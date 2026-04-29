@@ -28,11 +28,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Check admin role
+    // Check role — only admin, manager, or employee can reset passwords. Volunteers are explicitly blocked.
     const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", caller.id);
-    const isAdmin = roles?.some((r: any) => r.role === "admin");
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Not authorized" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const allowed = roles?.some((r: any) => ["admin", "manager", "employee"].includes(r.role));
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Not authorized — password reset requires admin or manager privileges" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { user_id, new_password } = await req.json();
