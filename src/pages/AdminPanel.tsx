@@ -565,21 +565,23 @@ export default function AdminPanel() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-sm flex-shrink-0">
-                      <div className="text-center">
-                        {editingPoints?.userId === student.user_id ? (
-                          <div className="flex items-center gap-1">
-                            <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
-                              onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
-                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
-                            <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
-                            <Pencil className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">Points</p>
-                      </div>
+                       <div className="text-center">
+                         {hasFullAccess && editingPoints?.userId === student.user_id ? (
+                           <div className="flex items-center gap-1">
+                             <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
+                               onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
+                             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                           </div>
+                         ) : hasFullAccess ? (
+                           <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>
+                             <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                             <Pencil className="h-3 w-3 text-muted-foreground" />
+                           </div>
+                         ) : (
+                           <p className="font-bold text-primary">{getStudentPoints(student.user_id)}</p>
+                         )}
+                         <p className="text-xs text-muted-foreground">Points</p>
+                       </div>
                       <div className="text-center">
                         <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                         <p className="text-xs text-muted-foreground">Lessons</p>
