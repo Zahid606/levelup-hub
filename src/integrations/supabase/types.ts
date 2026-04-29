@@ -371,7 +371,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      student_basic_profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          full_name: string | null
+          gender: string | null
+          id: string | null
+          language: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string | null
+          language?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string | null
+          language?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -381,6 +422,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_full_access_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_limited_volunteer: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "employee" | "volunteer" | "manager"
