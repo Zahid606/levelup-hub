@@ -75,7 +75,26 @@ const translations: Record<string, Record<Language, string>> = {
   'contact.title': { en: 'Misk-ul-Kalam Social Media Links', ur: 'مسک الکلام سوشل میڈیا لنکس', bn: 'মিস্ক-উল-কালাম সোশ্যাল মিডিয়া লিঙ্কস' },
   'contact.followCta': { en: 'Like, follow and subscribe', ur: 'لائک، فالو اور سبسکرائب کریں', bn: 'লাইক, ফলো এবং সাবস্ক্রাইব করুন' },
   'contact.supervision': { en: 'Under supervision of Sheikh Farooq Hayder, Preacher and Teacher, Yanbu Islamic Center', ur: 'زیر نگرانی شیخ فاروق حیدر، داعی و معلم، ینبع اسلامی مرکز', bn: 'শেখ ফারুক হায়দার, প্রচারক ও শিক্ষক, ইয়ানবু ইসলামিক সেন্টার তত্ত্বাবধানে' },
-};
+  'contact.footer.under': { en: 'Under supervision of', ur: 'زیر نگرانی', bn: 'তত্ত্বাবধানে' },
+  'contact.footer.name': { en: 'Sheikh Farooq Hayder', ur: 'شیخ فاروق حیدر', bn: 'শেখ ফারুক হায়দার' },
+  'contact.footer.role': { en: 'Preacher and Teacher', ur: 'داعی و معلم', bn: 'প্রচারক ও শিক্ষক' },
+  'contact.footer.org': { en: 'Yanbu Islamic Center', ur: 'ینبع اسلامی مرکز', bn: 'ইয়ানবু ইসলামিক সেন্টার' },
+
+  // Student dashboard
+  'lessons.empty': { en: 'No lessons available yet. Check back soon!', ur: 'ابھی کوئی سبق دستیاب نہیں ہے۔ جلد دوبارہ آئیں!', bn: 'এখনও কোনো পাঠ উপলব্ধ নেই। শীঘ্রই আবার দেখুন!' },
+
+  // Login form
+  'login.phone': { en: 'Phone Number (e.g. +966...)', ur: 'فون نمبر (مثلاً +966...)', bn: 'ফোন নম্বর (যেমন +966...)' },
+  'login.gender': { en: 'Select Gender', ur: 'جنس منتخب کریں', bn: 'লিঙ্গ নির্বাচন করুন' },
+  'login.male': { en: 'Male', ur: 'مرد', bn: 'পুরুষ' },
+  'login.female': { en: 'Female', ur: 'عورت', bn: 'মহিলা' },
+  'login.age': { en: 'Age', ur: 'عمر', bn: 'বয়স' },
+  'login.country': { en: 'Select Country', ur: 'ملک منتخب کریں', bn: 'দেশ নির্বাচন করুন' },
+  'login.city': { en: 'Select City', ur: 'شہر منتخب کریں', bn: 'শহর নির্বাচন করুন' },
+  'login.cityCustom': { en: 'City', ur: 'شہر', bn: 'শহর' },
+
+  // Old contact key compat (already above) - keep this section last
+  '__noop': { en: '', ur: '', bn: '' },
 
 export function t(key: string, lang: Language = 'en'): string {
   return translations[key]?.[lang] || translations[key]?.en || key;
