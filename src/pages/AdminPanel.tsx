@@ -153,7 +153,7 @@ export default function AdminPanel() {
     if (error) { toast.error(error.message); return; }
     if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: newStaff.role as any });
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
-    setNewStaff({ email: '', password: '', full_name: '', role: 'employee' }); setDialogOpen(''); loadAll();
+    setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
