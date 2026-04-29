@@ -43,7 +43,7 @@ export default function AdminPanel() {
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '', video_points: 10 });
   const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
-  const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
+  const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'manager' });
   const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState('');
