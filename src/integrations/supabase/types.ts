@@ -266,6 +266,45 @@ export type Database = {
           },
         ]
       }
+      student_basic_profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          full_name: string | null
+          gender: string | null
+          language: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          gender?: string | null
+          language?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          gender?: string | null
+          language?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string
@@ -371,48 +410,7 @@ export type Database = {
       }
     }
     Views: {
-      student_basic_profiles: {
-        Row: {
-          age: number | null
-          avatar_url: string | null
-          city: string | null
-          country: string | null
-          created_at: string | null
-          full_name: string | null
-          gender: string | null
-          id: string | null
-          language: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          age?: number | null
-          avatar_url?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          gender?: string | null
-          id?: string | null
-          language?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          age?: number | null
-          avatar_url?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          gender?: string | null
-          id?: string | null
-          language?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       has_role: {
