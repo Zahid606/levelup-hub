@@ -27,7 +27,7 @@ const ROLE_CONFIG = {
 };
 
 export default function AdminPanel() {
-  const { user, language, isAdmin, isManager, isEmployee, isVolunteer } = useAuth();
+  const { user, language, isAdmin, isManager, isVolunteer } = useAuth();
   const hasFullAccess = isAdmin || isManager;
   const hasLimitedVolunteerAccess = isVolunteer && !hasFullAccess;
   const canAddLesson = hasFullAccess || hasLimitedVolunteerAccess;
@@ -306,12 +306,12 @@ export default function AdminPanel() {
       <main className="container py-8 space-y-6">
         <h1 className="text-3xl font-heading font-bold">{t('admin.dashboard', language)}</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Users</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allProgress.filter(p => p.completed).length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allPoints.reduce((s, p) => s + p.points, 0)}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
-        </div>
+        </div>}
 
         <Tabs defaultValue="lessons">
           <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
@@ -473,9 +473,9 @@ export default function AdminPanel() {
               <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="h-4 w-4 mr-1" /> Filters
               </Button>
-              <Button variant="outline" size="sm" onClick={exportStudentsToExcel}>
+              {hasFullAccess && <Button variant="outline" size="sm" onClick={exportStudentsToExcel}>
                 <Download className="h-4 w-4 mr-1" /> Export Excel
-              </Button>
+              </Button>}
               <Dialog open={dialogOpen === 'student'} onOpenChange={o => setDialogOpen(o ? 'student' : '')}>
                 <DialogTrigger asChild>
                   <Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />Add Student</Button>
