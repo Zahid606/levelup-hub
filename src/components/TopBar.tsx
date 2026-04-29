@@ -10,7 +10,7 @@ import { ProfileSettings } from '@/components/ProfileSettings';
 
 
 export function TopBar() {
-  const { user, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
+  const { user, isAdmin, isManager, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -39,7 +39,7 @@ export function TopBar() {
               <Mail className="h-4 w-4" />
               {t('nav.contact', language)}
             </Link>
-            {(isAdmin || isEmployee || isVolunteer) && (
+            {(isAdmin || isManager || isEmployee || isVolunteer) && (
               <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 <Shield className="h-4 w-4" />
                 {t('nav.admin', language)}

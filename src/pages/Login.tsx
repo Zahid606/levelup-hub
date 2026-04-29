@@ -83,7 +83,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-xl font-heading">{isSignup ? t('auth.signup', language) : t('auth.login', language)}</CardTitle>
           <CardDescription>
-            {isSignup ? 'Create your student account' : 'Welcome back'}
+            {isSignup ? (language === 'ur' ? 'اپنا اسٹوڈنٹ اکاؤنٹ بنائیں' : language === 'bn' ? 'আপনার ছাত্র অ্যাকাউন্ট তৈরি করুন' : 'Create your student account') : t('general.welcome', language)}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,19 +91,19 @@ export default function Login() {
             {isSignup && (
               <>
                 <Input placeholder={t('auth.fullName', language)} value={fullName} onChange={e => setFullName(e.target.value)} required />
-                <Input type="tel" placeholder="Phone Number (e.g. +966...)" value={phone} onChange={e => setPhone(e.target.value)} />
+                <Input type="tel" placeholder={t('login.phone', language)} value={phone} onChange={e => setPhone(e.target.value)} />
                 <Select value={gender} onValueChange={setGender}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Gender" />
+                    <SelectValue placeholder={t('login.gender', language)} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">{t('login.male', language)}</SelectItem>
+                    <SelectItem value="female">{t('login.female', language)}</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input type="number" placeholder="Age" min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
+                <Input type="number" placeholder={t('login.age', language)} min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
                 <Select value={country} onValueChange={v => { setCountry(v); setCity(''); }}>
-                  <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('login.country', language)} /></SelectTrigger>
                   <SelectContent>
                     {COUNTRIES.map(c => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -112,7 +112,7 @@ export default function Login() {
                 </Select>
                 {country === 'Saudi Arabia' ? (
                   <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('login.city', language)} /></SelectTrigger>
                     <SelectContent>
                       {SAUDI_CITIES.map(c => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -120,7 +120,7 @@ export default function Login() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+                  <Input placeholder={t('login.cityCustom', language)} value={city} onChange={e => setCity(e.target.value)} />
                 )}
               </>
             )}

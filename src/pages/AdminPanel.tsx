@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter, Star } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter, Star, Crown } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
@@ -21,13 +21,15 @@ import { saveAs } from 'file-saver';
 
 const ROLE_CONFIG = {
   admin: { label: 'Admin', icon: Shield, color: 'text-red-500', desc: 'Full access' },
+  manager: { label: 'Manager', icon: Crown, color: 'text-amber-500', desc: 'Full access' },
   employee: { label: 'Employee', icon: ShieldCheck, color: 'text-blue-500', desc: 'Full access' },
-  volunteer: { label: 'Volunteer', icon: Heart, color: 'text-pink-500', desc: 'Add/edit only' },
+  volunteer: { label: 'Volunteer', icon: Heart, color: 'text-pink-500', desc: 'Lessons & add students only' },
 };
 
 export default function AdminPanel() {
-  const { user, language, isAdmin, isEmployee, isVolunteer } = useAuth();
-  const canDelete = isAdmin || isEmployee; // volunteers cannot delete
+  const { user, language, isAdmin, isManager, isEmployee, isVolunteer } = useAuth();
+  const hasFullAccess = isAdmin || isManager || isEmployee;
+  const canDelete = hasFullAccess; // volunteers cannot delete
 
   const [lessons, setLessons] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -41,7 +43,7 @@ export default function AdminPanel() {
   const [newVideo, setNewVideo] = useState({ lesson_id: '', title: '', youtube_url: '', video_points: 10 });
   const [newQuiz, setNewQuiz] = useState({ lesson_id: '', question: '', question_ur: '', question_bn: '', options: ['', '', '', ''], options_ur: ['', '', '', ''], options_bn: ['', '', '', ''], correct_answer: 0, points: 10 });
   const [newGift, setNewGift] = useState({ user_id: '', gift_name: '', description: '' });
-  const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'employee' });
+  const [newStaff, setNewStaff] = useState({ email: '', password: '', full_name: '', role: 'manager' });
   const [newStudent, setNewStudent] = useState({ email: '', password: '', full_name: '' });
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState('');
@@ -151,7 +153,7 @@ export default function AdminPanel() {
     if (error) { toast.error(error.message); return; }
     if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: newStaff.role as any });
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
-    setNewStaff({ email: '', password: '', full_name: '', role: 'employee' }); setDialogOpen(''); loadAll();
+    setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
@@ -291,12 +293,12 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="lessons">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>
-            <TabsTrigger value="gifts">Gifts</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
+            {hasFullAccess && <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>}
+            {hasFullAccess && <TabsTrigger value="gifts">Gifts</TabsTrigger>}
+            {hasFullAccess && <TabsTrigger value="staff">Staff</TabsTrigger>}
           </TabsList>
 
           {/* LESSONS TAB */}
@@ -582,9 +584,11 @@ export default function AdminPanel() {
                         <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                         <p className="text-xs text-muted-foreground">Lessons</p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
+                      {hasFullAccess && (
+                        <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -687,11 +691,14 @@ export default function AdminPanel() {
                     <Select value={newStaff.role} onValueChange={v => setNewStaff({ ...newStaff, role: v })}>
                       <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="employee">
-                          <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-blue-500" /> Employee (Full access)</span>
+                        <SelectItem value="manager">
+                          <span className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" /> Manager (Full access)</span>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <span className="flex items-center gap-2"><Shield className="h-4 w-4 text-red-500" /> Admin (Full access)</span>
                         </SelectItem>
                         <SelectItem value="volunteer">
-                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Add/edit only)</span>
+                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Lessons & add students)</span>
                         </SelectItem>
                       </SelectContent>
                     </Select>
