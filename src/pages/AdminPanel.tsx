@@ -28,7 +28,10 @@ const ROLE_CONFIG = {
 
 export default function AdminPanel() {
   const { user, language, isAdmin, isManager, isEmployee, isVolunteer } = useAuth();
-  const hasFullAccess = isAdmin || isManager || isEmployee;
+  const hasFullAccess = isAdmin || isManager;
+  const hasLimitedVolunteerAccess = isVolunteer && !hasFullAccess;
+  const canAddLesson = hasFullAccess || hasLimitedVolunteerAccess;
+  const canAddStudent = hasFullAccess || hasLimitedVolunteerAccess;
   const canDelete = hasFullAccess; // volunteers cannot delete
 
   const [lessons, setLessons] = useState<any[]>([]);
@@ -69,16 +72,17 @@ export default function AdminPanel() {
   const [filterJoinedTo, setFilterJoinedTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, [hasFullAccess, hasLimitedVolunteerAccess]);
 
   async function loadAll() {
+    const studentTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
     const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
       supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
-      supabase.from('profiles').select('*'),
-      supabase.from('user_progress').select('*'),
-      supabase.from('user_points').select('*'),
-      supabase.from('quiz_answers').select('*'),
-      supabase.from('user_roles').select('*'),
+      (supabase as any).from(studentTable).select('*'),
+      hasFullAccess ? supabase.from('user_progress').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('user_points').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('quiz_answers').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('user_roles').select('*') : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
