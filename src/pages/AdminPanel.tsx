@@ -342,7 +342,7 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
+              {hasFullAccess && <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><Video className="h-4 w-4 mr-1" />{t('admin.addVideo', language)}</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t('admin.addVideo', language)}</DialogTitle></DialogHeader>
@@ -360,9 +360,9 @@ export default function AdminPanel() {
                     <Button onClick={addVideo} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+              </Dialog>}
 
-              <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
+              {hasFullAccess && <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><HelpCircle className="h-4 w-4 mr-1" />{t('admin.addQuiz', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addQuiz', language)}</DialogTitle></DialogHeader>
@@ -399,7 +399,7 @@ export default function AdminPanel() {
                     <Button onClick={addQuizQuestion} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+              </Dialog>}
             </div>
 
             <div className="relative">
@@ -420,11 +420,13 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>
-                      <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />
-                      <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {hasFullAccess && <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>}
+                      {hasFullAccess && <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />}
+                      {hasFullAccess && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       {canDelete && (
                         <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
