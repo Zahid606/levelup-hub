@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter, Star } from 'lucide-react';
+import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter, Star, Crown } from 'lucide-react';
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
@@ -21,13 +21,15 @@ import { saveAs } from 'file-saver';
 
 const ROLE_CONFIG = {
   admin: { label: 'Admin', icon: Shield, color: 'text-red-500', desc: 'Full access' },
+  manager: { label: 'Manager', icon: Crown, color: 'text-amber-500', desc: 'Full access' },
   employee: { label: 'Employee', icon: ShieldCheck, color: 'text-blue-500', desc: 'Full access' },
-  volunteer: { label: 'Volunteer', icon: Heart, color: 'text-pink-500', desc: 'Add/edit only' },
+  volunteer: { label: 'Volunteer', icon: Heart, color: 'text-pink-500', desc: 'Lessons & add students only' },
 };
 
 export default function AdminPanel() {
-  const { user, language, isAdmin, isEmployee, isVolunteer } = useAuth();
-  const canDelete = isAdmin || isEmployee; // volunteers cannot delete
+  const { user, language, isAdmin, isManager, isEmployee, isVolunteer } = useAuth();
+  const hasFullAccess = isAdmin || isManager || isEmployee;
+  const canDelete = hasFullAccess; // volunteers cannot delete
 
   const [lessons, setLessons] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
