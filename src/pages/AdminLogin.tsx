@@ -24,13 +24,13 @@ export default function AdminLogin() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       
-      // Check if user is admin
+      // Check if user has a staff role allowed to enter the admin area
       const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', data.user.id);
-      const isAdmin = roles?.some(r => r.role === 'admin');
+      const hasStaffAccess = roles?.some(r => ['admin', 'manager', 'volunteer'].includes(r.role as string));
       
-      if (!isAdmin) {
+      if (!hasStaffAccess) {
         await supabase.auth.signOut();
-        toast.error('Access denied. Admin accounts only.');
+        toast.error('Access denied. Staff accounts only.');
         return;
       }
       
@@ -63,7 +63,7 @@ export default function AdminLogin() {
             </div>
           </div>
           <CardTitle className="text-xl font-heading">{t('auth.adminLogin', language)}</CardTitle>
-          <CardDescription>Admin access only</CardDescription>
+          <CardDescription>Staff access only</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
