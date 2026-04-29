@@ -422,8 +422,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_full_access_staff: { Args: { _user_id: string }; Returns: boolean }
-      is_limited_volunteer: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "employee" | "volunteer" | "manager"
