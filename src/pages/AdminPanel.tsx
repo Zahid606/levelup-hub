@@ -584,9 +584,11 @@ export default function AdminPanel() {
                         <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                         <p className="text-xs text-muted-foreground">Lessons</p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
+                      {hasFullAccess && (
+                        <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" onClick={() => setEditingStudent({ ...student })}>
                         <Pencil className="h-4 w-4" />
                       </Button>
