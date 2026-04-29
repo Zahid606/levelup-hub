@@ -38,21 +38,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setLoading(true);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => checkRoles(session.user.id), 0);
+        await checkRoles(session.user.id);
       } else {
         setIsAdmin(false); setIsManager(false); setIsEmployee(false); setIsVolunteer(false);
       }
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) checkRoles(session.user.id);
+      if (session?.user) await checkRoles(session.user.id);
       setLoading(false);
     });
 
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setIsAdmin(data.some(r => r.role === 'admin'));
       setIsManager(data.some(r => (r.role as any) === 'manager'));
-      setIsEmployee(data.some(r => r.role === 'employee'));
+      setIsEmployee(false);
       setIsVolunteer(data.some(r => r.role === 'volunteer' as any));
     }
   }

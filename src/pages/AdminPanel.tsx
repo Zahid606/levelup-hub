@@ -27,8 +27,11 @@ const ROLE_CONFIG = {
 };
 
 export default function AdminPanel() {
-  const { user, language, isAdmin, isManager, isEmployee, isVolunteer } = useAuth();
-  const hasFullAccess = isAdmin || isManager || isEmployee;
+  const { user, language, isAdmin, isManager, isVolunteer } = useAuth();
+  const hasFullAccess = isAdmin || isManager;
+  const hasLimitedVolunteerAccess = isVolunteer && !hasFullAccess;
+  const canAddLesson = hasFullAccess || hasLimitedVolunteerAccess;
+  const canAddStudent = hasFullAccess || hasLimitedVolunteerAccess;
   const canDelete = hasFullAccess; // volunteers cannot delete
 
   const [lessons, setLessons] = useState<any[]>([]);
@@ -69,16 +72,17 @@ export default function AdminPanel() {
   const [filterJoinedTo, setFilterJoinedTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, [hasFullAccess, hasLimitedVolunteerAccess]);
 
   async function loadAll() {
+    const studentTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
     const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
       supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
-      supabase.from('profiles').select('*'),
-      supabase.from('user_progress').select('*'),
-      supabase.from('user_points').select('*'),
-      supabase.from('quiz_answers').select('*'),
-      supabase.from('user_roles').select('*'),
+      (supabase as any).from(studentTable).select('*'),
+      hasFullAccess ? supabase.from('user_progress').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('user_points').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('quiz_answers').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('user_roles').select('*') : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
@@ -89,6 +93,7 @@ export default function AdminPanel() {
   }
 
   const addLesson = async () => {
+    if (!canAddLesson) { toast.error('You do not have permission to add lessons'); return; }
     const payload: any = {
       title: newLesson.title,
       title_ur: newLesson.title_ur,
@@ -108,6 +113,7 @@ export default function AdminPanel() {
   };
 
   const updateLesson = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit lessons'); return; }
     if (!editingLesson) return;
     const { error } = await supabase.from('lessons').update({
       title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
@@ -120,6 +126,7 @@ export default function AdminPanel() {
   };
 
   const addVideo = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can add videos'); return; }
     const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url, video_points: newVideo.video_points } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Video added!');
@@ -127,6 +134,7 @@ export default function AdminPanel() {
   };
 
   const addQuizQuestion = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can add quizzes'); return; }
     const { error } = await supabase.from('quiz_questions').insert({
       lesson_id: newQuiz.lesson_id, question: newQuiz.question,
       question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
@@ -142,6 +150,7 @@ export default function AdminPanel() {
   };
 
   const giveGift = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
     const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
@@ -149,16 +158,23 @@ export default function AdminPanel() {
   };
 
   const addStaffMember = async () => {
-    const { data, error } = await supabase.auth.signUp({ email: newStaff.email, password: newStaff.password, options: { data: { full_name: newStaff.full_name } } });
+    if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
+    const { data, error } = await supabase.functions.invoke('staff-create-user', {
+      body: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role },
+    });
     if (error) { toast.error(error.message); return; }
-    if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: newStaff.role as any });
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
     setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
-    const { error } = await supabase.auth.signUp({ email: newStudent.email, password: newStudent.password, options: { data: { full_name: newStudent.full_name } } });
+    if (!canAddStudent) { toast.error('You do not have permission to add students'); return; }
+    const { data, error } = await supabase.functions.invoke('staff-create-user', {
+      body: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
+    });
     if (error) { toast.error(error.message); return; }
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
     toast.success('Student account created!');
     setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
   };
@@ -177,6 +193,7 @@ export default function AdminPanel() {
   };
 
   const updateStudent = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit student records'); return; }
     if (!editingStudent) return;
     const { error } = await supabase.from('profiles').update({ full_name: editingStudent.full_name }).eq('user_id', editingStudent.user_id);
     if (error) { toast.error(error.message); return; }
@@ -191,6 +208,7 @@ export default function AdminPanel() {
   };
 
   const togglePublish = async (id: string, current: boolean) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can publish or unpublish lessons'); return; }
     await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
   };
 
@@ -204,14 +222,14 @@ export default function AdminPanel() {
   // Filtered students
   const filteredStudents = students.filter(s => {
     const q = searchStudents.toLowerCase();
-    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q);
+    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (hasFullAccess && ((s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q)));
     const matchCountry = filterCountry === 'all' || s.country === filterCountry;
     const matchCity = filterCity === 'all' || s.city === filterCity;
     const matchGender = filterGender === 'all' || s.gender === filterGender;
     const matchAgeMin = !filterAgeMin || (s.age && s.age >= parseInt(filterAgeMin));
     const matchAgeMax = !filterAgeMax || (s.age && s.age <= parseInt(filterAgeMax));
-    const matchEmail = !filterEmail || (s.email || '').toLowerCase().includes(filterEmail.toLowerCase());
-    const matchPhone = !filterPhone || (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase());
+    const matchEmail = !filterEmail || (hasFullAccess && (s.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
+    const matchPhone = !filterPhone || (hasFullAccess && (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase()));
     const joined = s.created_at ? new Date(s.created_at) : null;
     const matchFrom = !filterJoinedFrom || (joined && joined >= new Date(filterJoinedFrom));
     const matchTo = !filterJoinedTo || (joined && joined <= new Date(filterJoinedTo + 'T23:59:59'));
@@ -229,6 +247,7 @@ export default function AdminPanel() {
 
 
   const updateStudentPoints = async (userId: string, newTotal: number) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit points'); return; }
     const currentTotal = getStudentPoints(userId);
     const diff = newTotal - currentTotal;
     if (diff === 0) { setEditingPoints(null); return; }
@@ -238,6 +257,7 @@ export default function AdminPanel() {
   };
 
   const handleResetPassword = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can reset passwords'); return; }
     if (!resetPasswordStudent || !newPassword) return;
     setResettingPassword(true);
     try {
@@ -257,6 +277,7 @@ export default function AdminPanel() {
 
   // Export to Excel
   const exportStudentsToExcel = () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can export student data'); return; }
     const data = filteredStudents.map(s => ({
       'Name': s.full_name || 'N/A',
       'Email': s.email || 'N/A',
@@ -285,12 +306,12 @@ export default function AdminPanel() {
       <main className="container py-8 space-y-6">
         <h1 className="text-3xl font-heading font-bold">{t('admin.dashboard', language)}</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Users</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allProgress.filter(p => p.completed).length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allPoints.reduce((s, p) => s + p.points, 0)}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
-        </div>
+        </div>}
 
         <Tabs defaultValue="lessons">
           <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
@@ -321,7 +342,7 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
+              {hasFullAccess && <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><Video className="h-4 w-4 mr-1" />{t('admin.addVideo', language)}</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t('admin.addVideo', language)}</DialogTitle></DialogHeader>
@@ -339,9 +360,9 @@ export default function AdminPanel() {
                     <Button onClick={addVideo} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+              </Dialog>}
 
-              <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
+              {hasFullAccess && <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><HelpCircle className="h-4 w-4 mr-1" />{t('admin.addQuiz', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addQuiz', language)}</DialogTitle></DialogHeader>
@@ -378,7 +399,7 @@ export default function AdminPanel() {
                     <Button onClick={addQuizQuestion} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+              </Dialog>}
             </div>
 
             <div className="relative">
@@ -399,11 +420,13 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>
-                      <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />
-                      <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {hasFullAccess && <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>}
+                      {hasFullAccess && <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />}
+                      {hasFullAccess && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       {canDelete && (
                         <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
@@ -450,9 +473,9 @@ export default function AdminPanel() {
               <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="h-4 w-4 mr-1" /> Filters
               </Button>
-              <Button variant="outline" size="sm" onClick={exportStudentsToExcel}>
+              {hasFullAccess && <Button variant="outline" size="sm" onClick={exportStudentsToExcel}>
                 <Download className="h-4 w-4 mr-1" /> Export Excel
-              </Button>
+              </Button>}
               <Dialog open={dialogOpen === 'student'} onOpenChange={o => setDialogOpen(o ? 'student' : '')}>
                 <DialogTrigger asChild>
                   <Button className="gradient-primary text-primary-foreground"><UserPlus className="h-4 w-4 mr-1" />Add Student</Button>
