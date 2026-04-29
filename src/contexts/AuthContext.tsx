@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  isManager: boolean;
   isEmployee: boolean;
   isVolunteer: boolean;
   language: Language;
