@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', userId);
     if (data) {
       setIsAdmin(data.some(r => r.role === 'admin'));
+      setIsManager(data.some(r => (r.role as any) === 'manager'));
       setIsEmployee(data.some(r => r.role === 'employee'));
       setIsVolunteer(data.some(r => r.role === 'volunteer' as any));
     }
@@ -71,11 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null); setSession(null);
-    setIsAdmin(false); setIsEmployee(false); setIsVolunteer(false);
+    setIsAdmin(false); setIsManager(false); setIsEmployee(false); setIsVolunteer(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isManager, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut }}>
       {children}
     </AuthContext.Provider>
   );
