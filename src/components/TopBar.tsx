@@ -10,7 +10,7 @@ import { ProfileSettings } from '@/components/ProfileSettings';
 
 
 export function TopBar() {
-  const { user, isAdmin, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
+  const { user, isAdmin, isManager, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
