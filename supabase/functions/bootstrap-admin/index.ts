@@ -14,20 +14,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Safety: only allow if no admin exists yet
-    const { data: existingAdmins } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin")
-      .limit(1);
-
-    if (existingAdmins && existingAdmins.length > 0) {
-      return new Response(JSON.stringify({ error: "Admin already exists. Bootstrap disabled." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const email = "admin@gmail.com";
     const password = "Admin@123";
 
