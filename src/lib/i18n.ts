@@ -93,8 +93,7 @@ const translations: Record<string, Record<Language, string>> = {
   'login.city': { en: 'Select City', ur: 'شہر منتخب کریں', bn: 'শহর নির্বাচন করুন' },
   'login.cityCustom': { en: 'City', ur: 'شہر', bn: 'শহর' },
 
-  // Old contact key compat (already above) - keep this section last
-  '__noop': { en: '', ur: '', bn: '' },
+};
 
 export function t(key: string, lang: Language = 'en'): string {
   return translations[key]?.[lang] || translations[key]?.en || key;
