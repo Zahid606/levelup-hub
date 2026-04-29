@@ -691,11 +691,14 @@ export default function AdminPanel() {
                     <Select value={newStaff.role} onValueChange={v => setNewStaff({ ...newStaff, role: v })}>
                       <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="employee">
-                          <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-blue-500" /> Employee (Full access)</span>
+                        <SelectItem value="manager">
+                          <span className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" /> Manager (Full access)</span>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <span className="flex items-center gap-2"><Shield className="h-4 w-4 text-red-500" /> Admin (Full access)</span>
                         </SelectItem>
                         <SelectItem value="volunteer">
-                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Add/edit only)</span>
+                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Lessons & add students)</span>
                         </SelectItem>
                       </SelectContent>
                     </Select>
