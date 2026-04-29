@@ -293,12 +293,12 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="lessons">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>
-            <TabsTrigger value="gifts">Gifts</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
+            {hasFullAccess && <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>}
+            {hasFullAccess && <TabsTrigger value="gifts">Gifts</TabsTrigger>}
+            {hasFullAccess && <TabsTrigger value="staff">Staff</TabsTrigger>}
           </TabsList>
 
           {/* LESSONS TAB */}
