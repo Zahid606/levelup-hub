@@ -93,6 +93,7 @@ export default function AdminPanel() {
   }
 
   const addLesson = async () => {
+    if (!canAddLesson) { toast.error('You do not have permission to add lessons'); return; }
     const payload: any = {
       title: newLesson.title,
       title_ur: newLesson.title_ur,
@@ -112,6 +113,7 @@ export default function AdminPanel() {
   };
 
   const updateLesson = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit lessons'); return; }
     if (!editingLesson) return;
     const { error } = await supabase.from('lessons').update({
       title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
@@ -124,6 +126,7 @@ export default function AdminPanel() {
   };
 
   const addVideo = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can add videos'); return; }
     const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url, video_points: newVideo.video_points } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Video added!');
@@ -131,6 +134,7 @@ export default function AdminPanel() {
   };
 
   const addQuizQuestion = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can add quizzes'); return; }
     const { error } = await supabase.from('quiz_questions').insert({
       lesson_id: newQuiz.lesson_id, question: newQuiz.question,
       question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
@@ -146,6 +150,7 @@ export default function AdminPanel() {
   };
 
   const giveGift = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
     const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
@@ -153,16 +158,23 @@ export default function AdminPanel() {
   };
 
   const addStaffMember = async () => {
-    const { data, error } = await supabase.auth.signUp({ email: newStaff.email, password: newStaff.password, options: { data: { full_name: newStaff.full_name } } });
+    if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
+    const { data, error } = await supabase.functions.invoke('staff-create-user', {
+      body: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role },
+    });
     if (error) { toast.error(error.message); return; }
-    if (data.user) await supabase.from('user_roles').insert({ user_id: data.user.id, role: newStaff.role as any });
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
     setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
-    const { error } = await supabase.auth.signUp({ email: newStudent.email, password: newStudent.password, options: { data: { full_name: newStudent.full_name } } });
+    if (!canAddStudent) { toast.error('You do not have permission to add students'); return; }
+    const { data, error } = await supabase.functions.invoke('staff-create-user', {
+      body: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
+    });
     if (error) { toast.error(error.message); return; }
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
     toast.success('Student account created!');
     setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
   };
@@ -181,6 +193,7 @@ export default function AdminPanel() {
   };
 
   const updateStudent = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit student records'); return; }
     if (!editingStudent) return;
     const { error } = await supabase.from('profiles').update({ full_name: editingStudent.full_name }).eq('user_id', editingStudent.user_id);
     if (error) { toast.error(error.message); return; }
@@ -195,6 +208,7 @@ export default function AdminPanel() {
   };
 
   const togglePublish = async (id: string, current: boolean) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can publish or unpublish lessons'); return; }
     await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
   };
 
