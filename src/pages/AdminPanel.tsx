@@ -222,14 +222,14 @@ export default function AdminPanel() {
   // Filtered students
   const filteredStudents = students.filter(s => {
     const q = searchStudents.toLowerCase();
-    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q);
+    const matchSearch = !q || (s.full_name || '').toLowerCase().includes(q) || (hasFullAccess && ((s.email || '').toLowerCase().includes(q) || (s.phone || '').toLowerCase().includes(q)));
     const matchCountry = filterCountry === 'all' || s.country === filterCountry;
     const matchCity = filterCity === 'all' || s.city === filterCity;
     const matchGender = filterGender === 'all' || s.gender === filterGender;
     const matchAgeMin = !filterAgeMin || (s.age && s.age >= parseInt(filterAgeMin));
     const matchAgeMax = !filterAgeMax || (s.age && s.age <= parseInt(filterAgeMax));
-    const matchEmail = !filterEmail || (s.email || '').toLowerCase().includes(filterEmail.toLowerCase());
-    const matchPhone = !filterPhone || (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase());
+    const matchEmail = !filterEmail || (hasFullAccess && (s.email || '').toLowerCase().includes(filterEmail.toLowerCase()));
+    const matchPhone = !filterPhone || (hasFullAccess && (s.phone || '').toLowerCase().includes(filterPhone.toLowerCase()));
     const joined = s.created_at ? new Date(s.created_at) : null;
     const matchFrom = !filterJoinedFrom || (joined && joined >= new Date(filterJoinedFrom));
     const matchTo = !filterJoinedTo || (joined && joined <= new Date(filterJoinedTo + 'T23:59:59'));
@@ -247,6 +247,7 @@ export default function AdminPanel() {
 
 
   const updateStudentPoints = async (userId: string, newTotal: number) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit points'); return; }
     const currentTotal = getStudentPoints(userId);
     const diff = newTotal - currentTotal;
     if (diff === 0) { setEditingPoints(null); return; }
@@ -256,6 +257,7 @@ export default function AdminPanel() {
   };
 
   const handleResetPassword = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can reset passwords'); return; }
     if (!resetPasswordStudent || !newPassword) return;
     setResettingPassword(true);
     try {
@@ -275,6 +277,7 @@ export default function AdminPanel() {
 
   // Export to Excel
   const exportStudentsToExcel = () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can export student data'); return; }
     const data = filteredStudents.map(s => ({
       'Name': s.full_name || 'N/A',
       'Email': s.email || 'N/A',
