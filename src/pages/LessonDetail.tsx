@@ -156,13 +156,17 @@ export default function LessonDetail() {
   async function loadLesson() {
     const cachedLessonList = lessonListCache.get('published');
     if (cachedLessonList) setAllLessons(cachedLessonList);
-    const [lessonRes, allLessonsRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
+    const [lessonRes, allLessonsRes, contentRes, questionsRes] = await Promise.all([
       supabase.from('lessons').select('id,title,title_ur,title_bn,description,description_ur,description_bn,lesson_number,created_at').eq('id', id!).single(),
       cachedLessonList ? Promise.resolve({ data: cachedLessonList }) : supabase.from('lessons').select('id, title, title_ur, title_bn, lesson_number, created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       supabase.from('lesson_content').select('id,title,youtube_url,video_points,sort_order').eq('lesson_id', id!).order('sort_order'),
       supabase.from('quiz_questions').select('id,question,question_ur,question_bn,options,options_ur,options_bn,correct_answer,points,sort_order').eq('lesson_id', id!).order('sort_order'),
-      supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id).in('question_id', []),
-      supabase.from('video_completions').select('content_id').eq('user_id', user!.id),
+    ]);
+    const questionIds = (questionsRes.data || []).map((q: any) => q.id);
+    const contentIds = (contentRes.data || []).map((c: any) => c.id);
+    const [answersRes, videoCompRes] = await Promise.all([
+      questionIds.length ? supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id).in('question_id', questionIds) : Promise.resolve({ data: [] }),
+      contentIds.length ? supabase.from('video_completions').select('content_id').eq('user_id', user!.id).in('content_id', contentIds) : Promise.resolve({ data: [] }),
     ]);
     setLesson(lessonRes.data);
     if (!cachedLessonList) lessonListCache.set('published', allLessonsRes.data || []);
