@@ -1,8 +1,7 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "sonner";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 // Lazy-load route components so each page only loads when visited.
 // This dramatically reduces the initial JS bundle (xlsx, charts, admin code, etc.).
@@ -14,6 +13,8 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const AdminRoute = lazy(() => import("./components/AdminRoute"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,33 +31,6 @@ const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
   </div>
-);
-
-function RequireUser({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-}
-
-function RequireStaff({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isManager, isVolunteer, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/admin-login" replace />;
-  if (!isAdmin && !isManager && !isVolunteer) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>
-    <RequireUser>{children}</RequireUser>
-  </AuthProvider>
-);
-
-const AdminRoute = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>
-    <RequireStaff>{children}</RequireStaff>
-  </AuthProvider>
 );
 
 const AppRoutes = () => (
