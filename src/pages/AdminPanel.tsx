@@ -995,22 +995,50 @@ export default function AdminPanel() {
               })}
             </div>
 
+            {/* Account totals */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{totalAccounts}</p>
+                <p className="text-xs text-muted-foreground">Total Accounts</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{staffRoles.filter(r => r.role !== 'student').length}</p>
+                <p className="text-xs text-muted-foreground">Staff</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{staffRoles.filter(r => r.role === 'student').length}</p>
+                <p className="text-xs text-muted-foreground">Students</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{students.filter(s => s.email).length}</p>
+                <p className="text-xs text-muted-foreground">Registered Emails</p>
+              </CardContent></Card>
+            </div>
+
             {/* Staff List */}
+            <h3 className="font-heading font-semibold text-lg pt-2">Workers</h3>
             {staffRoles.filter(r => r.role !== 'student').map(role => {
               const profile = students.find(s => s.user_id === role.user_id);
               const cfg = ROLE_CONFIG[role.role as keyof typeof ROLE_CONFIG];
               if (!cfg) return null;
               const Icon = cfg.icon;
+              const isSelf = role.user_id === user?.id;
               return (
                 <Card key={role.id} className="glass-card">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Icon className={`h-5 w-5 ${cfg.color}`} />
-                      <div>
-                        <p className="font-semibold">{profile?.full_name || 'Unknown'}</p>
-                        <p className="text-xs text-muted-foreground">{cfg.label} — {cfg.desc}</p>
+                  <CardContent className="p-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Icon className={`h-5 w-5 ${cfg.color} flex-shrink-0`} />
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">{profile?.full_name || 'Unknown'} {isSelf && <span className="text-xs text-muted-foreground">(you)</span>}</p>
+                        <p className="text-xs text-muted-foreground truncate">{cfg.label} — {cfg.desc}</p>
+                        {profile?.email && <p className="text-xs text-muted-foreground truncate">✉️ {profile.email}</p>}
                       </div>
                     </div>
+                    {!isSelf && (
+                      <Button variant="ghost" size="sm" onClick={() => deleteStaff(role.user_id)} className="text-destructive hover:text-destructive flex-shrink-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
