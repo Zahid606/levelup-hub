@@ -83,13 +83,16 @@ export default function AdminPanel() {
 
   async function loadAll() {
     const studentTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
-    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
+    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes, quizRes, giftsRes, historyRes] = await Promise.all([
       supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       (supabase as any).from(studentTable).select('*'),
       hasFullAccess ? supabase.from('user_progress').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('user_points').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('quiz_answers').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('user_roles').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('quiz_questions').select('*').order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('gifts').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+      hasFullAccess ? (supabase as any).from('gift_history').select('*').order('changed_at', { ascending: false }).limit(200) : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
@@ -97,6 +100,10 @@ export default function AdminPanel() {
     setAllPoints(pointsRes.data || []);
     setQuizAnswers(answersRes.data || []);
     setStaffRoles(rolesRes.data || []);
+    setQuizQuestions((quizRes as any).data || []);
+    setGifts((giftsRes as any).data || []);
+    setGiftHistory((historyRes as any).data || []);
+    setTotalAccounts((rolesRes.data as any[] | null)?.length || 0);
   }
 
   const addLesson = async () => {
