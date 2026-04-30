@@ -362,7 +362,7 @@ export default function AdminPanel() {
       'Lessons Completed': getStudentProgress(s.user_id),
       'Joined': s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',
     }));
-    const [{ default: XLSX }, { saveAs }] = await Promise.all([
+    const [XLSX, { saveAs }] = await Promise.all([
       import('xlsx'),
       import('file-saver'),
     ]);
