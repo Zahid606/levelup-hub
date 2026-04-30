@@ -123,6 +123,16 @@ export default function Contact() {
           ))}
         </div>
 
+        <Card className="glass-card mb-6">
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="text-lg font-heading font-semibold text-primary">📞 Contact Numbers</p>
+            <div className="flex flex-col items-center gap-2">
+              <a href="tel:+966595229775" className="text-base font-semibold hover:text-primary hover:underline" dir="ltr">+966 595 229 775</a>
+              <a href="tel:+966567035796" className="text-base font-semibold hover:text-primary hover:underline" dir="ltr">+966 567 035 796</a>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="glass-card">
           <CardContent className="p-6 text-center space-y-3">
             <p className="text-lg font-heading font-semibold text-primary">

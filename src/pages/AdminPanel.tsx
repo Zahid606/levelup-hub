@@ -40,6 +40,13 @@ export default function AdminPanel() {
   const [allPoints, setAllPoints] = useState<any[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [editingQuiz, setEditingQuiz] = useState<any | null>(null);
+  const [gifts, setGifts] = useState<any[]>([]);
+  const [giftHistory, setGiftHistory] = useState<any[]>([]);
+  const [editingGift, setEditingGift] = useState<any | null>(null);
+  const [totalAccounts, setTotalAccounts] = useState<number>(0);
+  const [filterQuizLesson, setFilterQuizLesson] = useState<string>('all');
 
   const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
@@ -76,13 +83,16 @@ export default function AdminPanel() {
 
   async function loadAll() {
     const studentTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
-    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes] = await Promise.all([
+    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes, quizRes, giftsRes, historyRes] = await Promise.all([
       supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       (supabase as any).from(studentTable).select('*'),
       hasFullAccess ? supabase.from('user_progress').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('user_points').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('quiz_answers').select('*') : Promise.resolve({ data: [] }),
       hasFullAccess ? supabase.from('user_roles').select('*') : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('quiz_questions').select('*').order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
+      hasFullAccess ? supabase.from('gifts').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+      hasFullAccess ? (supabase as any).from('gift_history').select('*').order('changed_at', { ascending: false }).limit(200) : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
@@ -90,6 +100,10 @@ export default function AdminPanel() {
     setAllPoints(pointsRes.data || []);
     setQuizAnswers(answersRes.data || []);
     setStaffRoles(rolesRes.data || []);
+    setQuizQuestions((quizRes as any).data || []);
+    setGifts((giftsRes as any).data || []);
+    setGiftHistory((historyRes as any).data || []);
+    setTotalAccounts((rolesRes.data as any[] | null)?.length || 0);
   }
 
   const addLesson = async () => {
@@ -149,13 +163,71 @@ export default function AdminPanel() {
     setDialogOpen('');
   };
 
+  const updateQuizQuestion = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit quizzes'); return; }
+    if (!editingQuiz) return;
+    const { error } = await supabase.from('quiz_questions').update({
+      question: editingQuiz.question,
+      question_ur: editingQuiz.question_ur || null,
+      question_bn: editingQuiz.question_bn || null,
+      options: editingQuiz.options,
+      options_ur: editingQuiz.options_ur,
+      options_bn: editingQuiz.options_bn,
+      correct_answer: editingQuiz.correct_answer,
+      points: editingQuiz.points,
+      lesson_id: editingQuiz.lesson_id,
+    } as any).eq('id', editingQuiz.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Quiz updated!');
+    setEditingQuiz(null); loadAll();
+  };
+
+  const deleteQuizQuestion = async (id: string) => {
+    if (!canDelete) { toast.error('Only managers and admins can delete quizzes'); return; }
+    if (!confirm('Delete this quiz question?')) return;
+    const { error } = await supabase.from('quiz_questions').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Quiz deleted'); loadAll();
+  };
+
   const giveGift = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
     const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
-    setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen('');
+    setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen(''); loadAll();
   };
+
+  const updateGift = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit gifts'); return; }
+    if (!editingGift) return;
+    const { error } = await supabase.from('gifts').update({
+      gift_name: editingGift.gift_name,
+      description: editingGift.description,
+    }).eq('id', editingGift.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Gift updated!');
+    setEditingGift(null); loadAll();
+  };
+
+  const deleteGift = async (id: string) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can delete gifts'); return; }
+    if (!confirm('Delete this gift? It will be recorded in history.')) return;
+    const { error } = await supabase.from('gifts').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Gift removed'); loadAll();
+  };
+
+  const deleteStaff = async (userId: string) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can remove staff'); return; }
+    if (userId === user?.id) { toast.error('You cannot remove your own account'); return; }
+    if (!confirm('Remove this worker? Their account and data will be permanently deleted.')) return;
+    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: userId } });
+    if (error) { toast.error(error.message); return; }
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    toast.success('Worker removed'); loadAll();
+  };
+
 
   const addStaffMember = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
@@ -306,9 +378,10 @@ export default function AdminPanel() {
       <main className="container py-8 space-y-6">
         <h1 className="text-3xl font-heading font-bold">{t('admin.dashboard', language)}</h1>
 
-        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
-          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Users</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Students</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{totalAccounts}</p><p className="text-xs text-muted-foreground">Total Accounts</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allProgress.filter(p => p.completed).length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allPoints.reduce((s, p) => s + p.points, 0)}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
         </div>}
@@ -456,6 +529,107 @@ export default function AdminPanel() {
                     <div className="flex gap-2">
                       <Button onClick={updateLesson} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
                       <Button onClick={() => setEditingLesson(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* QUIZ QUESTIONS LIST */}
+            {hasFullAccess && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="font-heading font-semibold text-lg flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5 text-primary" /> Quiz Questions
+                  </h3>
+                  <Select value={filterQuizLesson} onValueChange={setFilterQuizLesson}>
+                    <SelectTrigger className="w-56 h-8 text-xs"><SelectValue placeholder="Filter by lesson" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Lessons</SelectItem>
+                      {lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  {quizQuestions
+                    .filter(q => filterQuizLesson === 'all' || q.lesson_id === filterQuizLesson)
+                    .map(q => {
+                      const lesson = lessons.find(l => l.id === q.lesson_id);
+                      const opts = Array.isArray(q.options) ? q.options : [];
+                      return (
+                        <Card key={q.id} className="glass-card">
+                          <CardContent className="p-3 flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground">{lesson?.title || 'Unknown lesson'} • {q.points} pts</p>
+                              <p className="font-semibold truncate">{q.question}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                Correct: <span className="text-primary font-medium">{opts[q.correct_answer] ?? `Option ${String.fromCharCode(65 + (q.correct_answer || 0))}`}</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button variant="ghost" size="sm" onClick={() => setEditingQuiz({
+                                ...q,
+                                options: Array.isArray(q.options) ? [...q.options, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                                options_ur: Array.isArray(q.options_ur) ? [...q.options_ur, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                                options_bn: Array.isArray(q.options_bn) ? [...q.options_bn, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                              })}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {canDelete && (
+                                <Button variant="ghost" size="sm" onClick={() => deleteQuizQuestion(q.id)} className="text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  {quizQuestions.filter(q => filterQuizLesson === 'all' || q.lesson_id === filterQuizLesson).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No quiz questions yet.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* EDIT QUIZ DIALOG */}
+            <Dialog open={!!editingQuiz} onOpenChange={o => { if (!o) setEditingQuiz(null); }}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Edit Quiz Question</DialogTitle></DialogHeader>
+                {editingQuiz && (
+                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Select value={editingQuiz.lesson_id} onValueChange={v => setEditingQuiz({ ...editingQuiz, lesson_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select Lesson" /></SelectTrigger>
+                      <SelectContent>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input placeholder="Question (English)" value={editingQuiz.question || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question: e.target.value })} />
+                    <Input placeholder="سوال (Urdu)" dir="rtl" value={editingQuiz.question_ur || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question_ur: e.target.value })} />
+                    <Input placeholder="প্রশ্ন (Bengali)" value={editingQuiz.question_bn || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question_bn: e.target.value })} />
+                    {(editingQuiz.options as string[]).map((opt: string, i: number) => (
+                      <div key={i} className="rounded-md border border-border p-2 space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground">Option {String.fromCharCode(65 + i)}</div>
+                        <Input placeholder={`Answer ${String.fromCharCode(65 + i)} (English)`} value={opt} onChange={e => {
+                          const opts = [...editingQuiz.options]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options: opts });
+                        }} />
+                        <Input dir="rtl" placeholder={`جواب ${String.fromCharCode(65 + i)} (Urdu)`} value={editingQuiz.options_ur[i] || ''} onChange={e => {
+                          const opts = [...editingQuiz.options_ur]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options_ur: opts });
+                        }} />
+                        <Input placeholder={`উত্তর ${String.fromCharCode(65 + i)} (Bengali)`} value={editingQuiz.options_bn[i] || ''} onChange={e => {
+                          const opts = [...editingQuiz.options_bn]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options_bn: opts });
+                        }} />
+                      </div>
+                    ))}
+                    <Select value={String(editingQuiz.correct_answer)} onValueChange={v => setEditingQuiz({ ...editingQuiz, correct_answer: parseInt(v) })}>
+                      <SelectTrigger><SelectValue placeholder="Correct Answer" /></SelectTrigger>
+                      <SelectContent>{(editingQuiz.options as string[]).map((_: string, i: number) => <SelectItem key={i} value={String(i)}>Option {String.fromCharCode(65 + i)}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input type="number" placeholder="Points" value={editingQuiz.points} onChange={e => setEditingQuiz({ ...editingQuiz, points: parseInt(e.target.value) || 10 })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateQuizQuestion} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingQuiz(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
                     </div>
                   </div>
                 )}
@@ -695,6 +869,81 @@ export default function AdminPanel() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Gift list */}
+            <div className="space-y-2">
+              <h3 className="font-heading font-semibold text-lg flex items-center gap-2"><Gift className="h-5 w-5 text-accent" /> Current Gifts ({gifts.length})</h3>
+              {gifts.length === 0 && <p className="text-sm text-muted-foreground">No gifts yet.</p>}
+              {gifts.map(g => {
+                const recipient = students.find(s => s.user_id === g.user_id);
+                return (
+                  <Card key={g.id} className="glass-card">
+                    <CardContent className="p-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">🎁 {g.gift_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">For: {recipient?.full_name || 'Unknown'}</p>
+                        {g.description && <p className="text-xs text-muted-foreground truncate">{g.description}</p>}
+                        <p className="text-xs text-muted-foreground">{new Date(g.created_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingGift({ ...g })}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteGift(g.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Gift history */}
+            <div className="space-y-2 pt-2">
+              <h3 className="font-heading font-semibold text-lg">📜 Gift History</h3>
+              {giftHistory.length === 0 && <p className="text-sm text-muted-foreground">No history yet.</p>}
+              {giftHistory.map(h => {
+                const recipient = students.find(s => s.user_id === h.user_id);
+                const actorProfile = students.find(s => s.user_id === h.changed_by);
+                const color = h.action === 'created' ? 'text-green-500' : h.action === 'updated' ? 'text-amber-500' : 'text-destructive';
+                return (
+                  <Card key={h.id} className="glass-card">
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">
+                          <span className={`font-semibold capitalize ${color}`}>{h.action}</span>
+                          <span className="text-muted-foreground"> — {h.gift_name || 'Gift'}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          For: {recipient?.full_name || 'Unknown'}
+                          {actorProfile?.full_name && <> • By: {actorProfile.full_name}</>}
+                        </p>
+                        {h.description && <p className="text-xs text-muted-foreground truncate">{h.description}</p>}
+                      </div>
+                      <p className="text-xs text-muted-foreground flex-shrink-0">{new Date(h.changed_at).toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Edit gift dialog */}
+            <Dialog open={!!editingGift} onOpenChange={o => { if (!o) setEditingGift(null); }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Edit Gift</DialogTitle></DialogHeader>
+                {editingGift && (
+                  <div className="space-y-3">
+                    <Input placeholder="Gift Name" value={editingGift.gift_name || ''} onChange={e => setEditingGift({ ...editingGift, gift_name: e.target.value })} />
+                    <Input placeholder="Description" value={editingGift.description || ''} onChange={e => setEditingGift({ ...editingGift, description: e.target.value })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateGift} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingGift(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* STAFF TAB */}
@@ -746,22 +995,50 @@ export default function AdminPanel() {
               })}
             </div>
 
+            {/* Account totals */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{totalAccounts}</p>
+                <p className="text-xs text-muted-foreground">Total Accounts</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{staffRoles.filter(r => r.role !== 'student').length}</p>
+                <p className="text-xs text-muted-foreground">Staff</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{staffRoles.filter(r => r.role === 'student').length}</p>
+                <p className="text-xs text-muted-foreground">Students</p>
+              </CardContent></Card>
+              <Card className="glass-card"><CardContent className="p-3 text-center">
+                <p className="text-2xl font-heading font-bold">{students.filter(s => s.email).length}</p>
+                <p className="text-xs text-muted-foreground">Registered Emails</p>
+              </CardContent></Card>
+            </div>
+
             {/* Staff List */}
+            <h3 className="font-heading font-semibold text-lg pt-2">Workers</h3>
             {staffRoles.filter(r => r.role !== 'student').map(role => {
               const profile = students.find(s => s.user_id === role.user_id);
               const cfg = ROLE_CONFIG[role.role as keyof typeof ROLE_CONFIG];
               if (!cfg) return null;
               const Icon = cfg.icon;
+              const isSelf = role.user_id === user?.id;
               return (
                 <Card key={role.id} className="glass-card">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Icon className={`h-5 w-5 ${cfg.color}`} />
-                      <div>
-                        <p className="font-semibold">{profile?.full_name || 'Unknown'}</p>
-                        <p className="text-xs text-muted-foreground">{cfg.label} — {cfg.desc}</p>
+                  <CardContent className="p-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Icon className={`h-5 w-5 ${cfg.color} flex-shrink-0`} />
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">{profile?.full_name || 'Unknown'} {isSelf && <span className="text-xs text-muted-foreground">(you)</span>}</p>
+                        <p className="text-xs text-muted-foreground truncate">{cfg.label} — {cfg.desc}</p>
+                        {profile?.email && <p className="text-xs text-muted-foreground truncate">✉️ {profile.email}</p>}
                       </div>
                     </div>
+                    {!isSelf && (
+                      <Button variant="ghost" size="sm" onClick={() => deleteStaff(role.user_id)} className="text-destructive hover:text-destructive flex-shrink-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );

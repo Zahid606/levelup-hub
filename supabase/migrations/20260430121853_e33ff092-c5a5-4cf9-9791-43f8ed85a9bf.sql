@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.record_gift_history() FROM PUBLIC, anon, authenticated;

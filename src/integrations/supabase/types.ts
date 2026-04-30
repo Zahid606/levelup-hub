@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      gift_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          description: string | null
+          gift_id: string | null
+          gift_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          description?: string | null
+          gift_id?: string | null
+          gift_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          description?: string | null
+          gift_id?: string | null
+          gift_name?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gifts: {
         Row: {
           created_at: string
@@ -21,6 +54,7 @@ export type Database = {
           gift_name: string
           given_by: string | null
           id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -29,6 +63,7 @@ export type Database = {
           gift_name: string
           given_by?: string | null
           id?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -37,6 +72,7 @@ export type Database = {
           gift_name?: string
           given_by?: string | null
           id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
