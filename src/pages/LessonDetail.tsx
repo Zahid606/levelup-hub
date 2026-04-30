@@ -32,6 +32,8 @@ function useYouTubeAPI() {
   return ready;
 }
 
+const lessonListCache = new Map<string, any[]>();
+
 function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted }: {
   videoId: string; contentId: string; videoPoints: number;
   onComplete: (contentId: string, points: number) => void; isCompleted: boolean;
@@ -111,6 +113,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
         <iframe
           src={`https://www.youtube.com/embed/${videoId}`}
           className="w-full h-full" allowFullScreen
+          loading="lazy"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         />
       </div>
@@ -151,15 +154,18 @@ export default function LessonDetail() {
   }, [id, user]);
 
   async function loadLesson() {
+    const cachedLessonList = lessonListCache.get('published');
+    if (cachedLessonList) setAllLessons(cachedLessonList);
     const [lessonRes, allLessonsRes, contentRes, questionsRes, answersRes, videoCompRes] = await Promise.all([
-      supabase.from('lessons').select('*').eq('id', id!).single(),
-      supabase.from('lessons').select('id, title, title_ur, title_bn, lesson_number, created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
-      supabase.from('lesson_content').select('*').eq('lesson_id', id!).order('sort_order'),
-      supabase.from('quiz_questions').select('*').eq('lesson_id', id!).order('sort_order'),
-      supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id),
+      supabase.from('lessons').select('id,title,title_ur,title_bn,description,description_ur,description_bn,lesson_number,created_at').eq('id', id!).single(),
+      cachedLessonList ? Promise.resolve({ data: cachedLessonList }) : supabase.from('lessons').select('id, title, title_ur, title_bn, lesson_number, created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
+      supabase.from('lesson_content').select('id,title,youtube_url,video_points,sort_order').eq('lesson_id', id!).order('sort_order'),
+      supabase.from('quiz_questions').select('id,question,question_ur,question_bn,options,options_ur,options_bn,correct_answer,points,sort_order').eq('lesson_id', id!).order('sort_order'),
+      supabase.from('quiz_answers').select('question_id').eq('user_id', user!.id).in('question_id', []),
       supabase.from('video_completions').select('content_id').eq('user_id', user!.id),
     ]);
     setLesson(lessonRes.data);
+    if (!cachedLessonList) lessonListCache.set('published', allLessonsRes.data || []);
     setAllLessons(allLessonsRes.data || []);
     setContent(contentRes.data || []);
     setQuestions(questionsRes.data || []);
