@@ -91,33 +91,21 @@ export default function Login() {
               <>
                 <Input placeholder={t('auth.fullName', language)} value={fullName} onChange={e => setFullName(e.target.value)} required />
                 <Input type="tel" placeholder={t('login.phone', language)} value={phone} onChange={e => setPhone(e.target.value)} />
-                <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('login.gender', language)} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">{t('login.male', language)}</SelectItem>
-                    <SelectItem value="female">{t('login.female', language)}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select className={selectClass} value={gender} onChange={e => setGender(e.target.value)}>
+                  <option value="">{t('login.gender', language)}</option>
+                  <option value="male">{t('login.male', language)}</option>
+                  <option value="female">{t('login.female', language)}</option>
+                </select>
                 <Input type="number" placeholder={t('login.age', language)} min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
-                <Select value={country} onValueChange={v => { setCountry(v); setCity(''); }}>
-                  <SelectTrigger><SelectValue placeholder={t('login.country', language)} /></SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select className={selectClass} value={country} onChange={e => { setCountry(e.target.value); setCity(''); }}>
+                  <option value="">{t('login.country', language)}</option>
+                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
                 {country === 'Saudi Arabia' ? (
-                  <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger><SelectValue placeholder={t('login.city', language)} /></SelectTrigger>
-                    <SelectContent>
-                      {SAUDI_CITIES.map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select className={selectClass} value={city} onChange={e => setCity(e.target.value)}>
+                    <option value="">{t('login.city', language)}</option>
+                    {SAUDI_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 ) : (
                   <Input placeholder={t('login.cityCustom', language)} value={city} onChange={e => setCity(e.target.value)} />
                 )}
