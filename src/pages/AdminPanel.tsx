@@ -534,6 +534,107 @@ export default function AdminPanel() {
                 )}
               </DialogContent>
             </Dialog>
+
+            {/* QUIZ QUESTIONS LIST */}
+            {hasFullAccess && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="font-heading font-semibold text-lg flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5 text-primary" /> Quiz Questions
+                  </h3>
+                  <Select value={filterQuizLesson} onValueChange={setFilterQuizLesson}>
+                    <SelectTrigger className="w-56 h-8 text-xs"><SelectValue placeholder="Filter by lesson" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Lessons</SelectItem>
+                      {lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  {quizQuestions
+                    .filter(q => filterQuizLesson === 'all' || q.lesson_id === filterQuizLesson)
+                    .map(q => {
+                      const lesson = lessons.find(l => l.id === q.lesson_id);
+                      const opts = Array.isArray(q.options) ? q.options : [];
+                      return (
+                        <Card key={q.id} className="glass-card">
+                          <CardContent className="p-3 flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground">{lesson?.title || 'Unknown lesson'} • {q.points} pts</p>
+                              <p className="font-semibold truncate">{q.question}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                Correct: <span className="text-primary font-medium">{opts[q.correct_answer] ?? `Option ${String.fromCharCode(65 + (q.correct_answer || 0))}`}</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button variant="ghost" size="sm" onClick={() => setEditingQuiz({
+                                ...q,
+                                options: Array.isArray(q.options) ? [...q.options, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                                options_ur: Array.isArray(q.options_ur) ? [...q.options_ur, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                                options_bn: Array.isArray(q.options_bn) ? [...q.options_bn, '', '', '', ''].slice(0, 4) : ['', '', '', ''],
+                              })}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {canDelete && (
+                                <Button variant="ghost" size="sm" onClick={() => deleteQuizQuestion(q.id)} className="text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  {quizQuestions.filter(q => filterQuizLesson === 'all' || q.lesson_id === filterQuizLesson).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No quiz questions yet.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* EDIT QUIZ DIALOG */}
+            <Dialog open={!!editingQuiz} onOpenChange={o => { if (!o) setEditingQuiz(null); }}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Edit Quiz Question</DialogTitle></DialogHeader>
+                {editingQuiz && (
+                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    <Select value={editingQuiz.lesson_id} onValueChange={v => setEditingQuiz({ ...editingQuiz, lesson_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select Lesson" /></SelectTrigger>
+                      <SelectContent>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input placeholder="Question (English)" value={editingQuiz.question || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question: e.target.value })} />
+                    <Input placeholder="سوال (Urdu)" dir="rtl" value={editingQuiz.question_ur || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question_ur: e.target.value })} />
+                    <Input placeholder="প্রশ্ন (Bengali)" value={editingQuiz.question_bn || ''} onChange={e => setEditingQuiz({ ...editingQuiz, question_bn: e.target.value })} />
+                    {(editingQuiz.options as string[]).map((opt: string, i: number) => (
+                      <div key={i} className="rounded-md border border-border p-2 space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground">Option {String.fromCharCode(65 + i)}</div>
+                        <Input placeholder={`Answer ${String.fromCharCode(65 + i)} (English)`} value={opt} onChange={e => {
+                          const opts = [...editingQuiz.options]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options: opts });
+                        }} />
+                        <Input dir="rtl" placeholder={`جواب ${String.fromCharCode(65 + i)} (Urdu)`} value={editingQuiz.options_ur[i] || ''} onChange={e => {
+                          const opts = [...editingQuiz.options_ur]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options_ur: opts });
+                        }} />
+                        <Input placeholder={`উত্তর ${String.fromCharCode(65 + i)} (Bengali)`} value={editingQuiz.options_bn[i] || ''} onChange={e => {
+                          const opts = [...editingQuiz.options_bn]; opts[i] = e.target.value;
+                          setEditingQuiz({ ...editingQuiz, options_bn: opts });
+                        }} />
+                      </div>
+                    ))}
+                    <Select value={String(editingQuiz.correct_answer)} onValueChange={v => setEditingQuiz({ ...editingQuiz, correct_answer: parseInt(v) })}>
+                      <SelectTrigger><SelectValue placeholder="Correct Answer" /></SelectTrigger>
+                      <SelectContent>{(editingQuiz.options as string[]).map((_: string, i: number) => <SelectItem key={i} value={String(i)}>Option {String.fromCharCode(65 + i)}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input type="number" placeholder="Points" value={editingQuiz.points} onChange={e => setEditingQuiz({ ...editingQuiz, points: parseInt(e.target.value) || 10 })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateQuizQuestion} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingQuiz(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* STUDENTS TAB */}
