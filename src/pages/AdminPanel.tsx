@@ -163,13 +163,71 @@ export default function AdminPanel() {
     setDialogOpen('');
   };
 
+  const updateQuizQuestion = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit quizzes'); return; }
+    if (!editingQuiz) return;
+    const { error } = await supabase.from('quiz_questions').update({
+      question: editingQuiz.question,
+      question_ur: editingQuiz.question_ur || null,
+      question_bn: editingQuiz.question_bn || null,
+      options: editingQuiz.options,
+      options_ur: editingQuiz.options_ur,
+      options_bn: editingQuiz.options_bn,
+      correct_answer: editingQuiz.correct_answer,
+      points: editingQuiz.points,
+      lesson_id: editingQuiz.lesson_id,
+    } as any).eq('id', editingQuiz.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Quiz updated!');
+    setEditingQuiz(null); loadAll();
+  };
+
+  const deleteQuizQuestion = async (id: string) => {
+    if (!canDelete) { toast.error('Only managers and admins can delete quizzes'); return; }
+    if (!confirm('Delete this quiz question?')) return;
+    const { error } = await supabase.from('quiz_questions').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Quiz deleted'); loadAll();
+  };
+
   const giveGift = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
     const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
-    setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen('');
+    setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen(''); loadAll();
   };
+
+  const updateGift = async () => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can edit gifts'); return; }
+    if (!editingGift) return;
+    const { error } = await supabase.from('gifts').update({
+      gift_name: editingGift.gift_name,
+      description: editingGift.description,
+    }).eq('id', editingGift.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Gift updated!');
+    setEditingGift(null); loadAll();
+  };
+
+  const deleteGift = async (id: string) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can delete gifts'); return; }
+    if (!confirm('Delete this gift? It will be recorded in history.')) return;
+    const { error } = await supabase.from('gifts').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Gift removed'); loadAll();
+  };
+
+  const deleteStaff = async (userId: string) => {
+    if (!hasFullAccess) { toast.error('Only managers and admins can remove staff'); return; }
+    if (userId === user?.id) { toast.error('You cannot remove your own account'); return; }
+    if (!confirm('Remove this worker? Their account and data will be permanently deleted.')) return;
+    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: userId } });
+    if (error) { toast.error(error.message); return; }
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    toast.success('Worker removed'); loadAll();
+  };
+
 
   const addStaffMember = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
