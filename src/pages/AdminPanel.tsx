@@ -40,6 +40,13 @@ export default function AdminPanel() {
   const [allPoints, setAllPoints] = useState<any[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<any[]>([]);
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [editingQuiz, setEditingQuiz] = useState<any | null>(null);
+  const [gifts, setGifts] = useState<any[]>([]);
+  const [giftHistory, setGiftHistory] = useState<any[]>([]);
+  const [editingGift, setEditingGift] = useState<any | null>(null);
+  const [totalAccounts, setTotalAccounts] = useState<number>(0);
+  const [filterQuizLesson, setFilterQuizLesson] = useState<string>('all');
 
   const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
