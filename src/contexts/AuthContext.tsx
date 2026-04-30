@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Language } from '@/lib/i18n';
@@ -20,6 +20,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ROLE_CACHE_TTL = 5 * 60 * 1000;
+
+type RoleState = Pick<AuthContextType, 'isAdmin' | 'isManager' | 'isEmployee' | 'isVolunteer'>;
+
+const emptyRoles: RoleState = { isAdmin: false, isManager: false, isEmployee: false, isVolunteer: false };
+
+function readRoleCache(userId: string): RoleState | null {
+  try {
+    const raw = sessionStorage.getItem(`roles:${userId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as RoleState & { cachedAt: number };
+    if (!parsed.cachedAt || Date.now() - parsed.cachedAt > ROLE_CACHE_TTL) return null;
+    return {
+      isAdmin: !!parsed.isAdmin,
+      isManager: !!parsed.isManager,
+      isEmployee: !!parsed.isEmployee,
+      isVolunteer: !!parsed.isVolunteer,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeRoleCache(userId: string, roles: RoleState) {
+  try { sessionStorage.setItem(`roles:${userId}`, JSON.stringify({ ...roles, cachedAt: Date.now() })); } catch {}
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -30,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isVolunteer, setIsVolunteer] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'en');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => { localStorage.setItem('lang', language); }, [language]);
   useEffect(() => {
@@ -38,42 +66,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    let active = true;
+
+    const applySession = async (session: Session | null) => {
+      if (!active) return;
       setLoading(true);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await checkRoles(session.user.id);
+        await checkRoles(session.user.id, lastUserIdRef.current !== session.user.id);
+        lastUserIdRef.current = session.user.id;
       } else {
-        setIsAdmin(false); setIsManager(false); setIsEmployee(false); setIsVolunteer(false);
+        lastUserIdRef.current = null;
+        applyRoles(emptyRoles);
       }
-      setLoading(false);
+      if (active) setLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => applySession(session));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+      void applySession(session);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) await checkRoles(session.user.id);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
-  async function checkRoles(userId: string) {
+  function applyRoles(roles: RoleState) {
+    setIsAdmin(roles.isAdmin);
+    setIsManager(roles.isManager);
+    setIsEmployee(roles.isEmployee);
+    setIsVolunteer(roles.isVolunteer);
+  }
+
+  async function checkRoles(userId: string, forceRefresh = false) {
+    if (!forceRefresh) {
+      const cached = readRoleCache(userId);
+      if (cached) { applyRoles(cached); return; }
+    }
     const { data } = await supabase.from('user_roles').select('role').eq('user_id', userId);
     if (data) {
-      setIsAdmin(data.some(r => r.role === 'admin'));
-      setIsManager(data.some(r => (r.role as any) === 'manager'));
-      setIsEmployee(false);
-      setIsVolunteer(data.some(r => r.role === 'volunteer' as any));
+      const roles = {
+        isAdmin: data.some(r => r.role === 'admin'),
+        isManager: data.some(r => (r.role as any) === 'manager'),
+        isEmployee: false,
+        isVolunteer: data.some(r => r.role === 'volunteer' as any),
+      };
+      applyRoles(roles);
+      writeRoleCache(userId, roles);
     }
   }
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null); setSession(null);
-    setIsAdmin(false); setIsManager(false); setIsEmployee(false); setIsVolunteer(false);
+    lastUserIdRef.current = null;
+    applyRoles(emptyRoles);
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -13,8 +13,9 @@ import { BookOpen, Trophy, Star, Gift, CheckCircle2, Search } from 'lucide-react
 export default function StudentDashboard() {
   const { user, language } = useAuth();
   const [lessons, setLessons] = useState<any[]>([]);
-  const [progress, setProgress] = useState<any[]>([]);
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(() => new Set());
   const [totalPoints, setTotalPoints] = useState(0);
+  const [giftCount, setGiftCount] = useState(0);
   const [gifts, setGifts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
@@ -24,20 +25,45 @@ export default function StudentDashboard() {
   }, [user]);
 
   async function loadData() {
-    const [lessonsRes, progressRes, pointsRes, giftsRes] = await Promise.all([
-      supabase.from('lessons').select('*').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
-      supabase.from('user_progress').select('*').eq('user_id', user!.id),
-      supabase.from('user_points').select('points').eq('user_id', user!.id),
-      supabase.from('gifts').select('*').eq('user_id', user!.id),
+    const [lessonsRes, progressRes, summaryRes] = await Promise.all([
+      supabase.from('lessons').select('id,title,title_ur,title_bn,description,description_ur,description_bn,lesson_number,created_at').eq('is_published', true).order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
+      supabase.from('user_progress').select('lesson_id').eq('user_id', user!.id).eq('completed', true),
+      (supabase as any).rpc('get_student_dashboard_summary', { _user_id: user!.id }).maybeSingle(),
     ]);
     setLessons(lessonsRes.data || []);
-    setProgress(progressRes.data || []);
-    setTotalPoints((pointsRes.data || []).reduce((sum, p) => sum + p.points, 0));
-    setGifts(giftsRes.data || []);
+    setCompletedLessonIds(new Set((progressRes.data || []).map((p: any) => p.lesson_id)));
+    setTotalPoints(Number(summaryRes.data?.total_points || 0));
+    const nextGiftCount = Number(summaryRes.data?.gift_count || 0);
+    setGiftCount(nextGiftCount);
+    if (nextGiftCount > 0) {
+      supabase.from('gifts').select('id,gift_name,description').eq('user_id', user!.id).order('created_at', { ascending: false }).limit(20)
+        .then(({ data }) => setGifts(data || []));
+    } else {
+      setGifts([]);
+    }
   }
 
-  const completedCount = progress.filter(p => p.completed).length;
+  const completedCount = completedLessonIds.size;
   const progressPercent = lessons.length > 0 ? (completedCount / lessons.length) * 100 : 0;
+
+  const filteredLessons = useMemo(() => lessons
+    .map((lesson, i) => ({ lesson, displayNum: lesson.lesson_number ?? (i + 1), idx: i }))
+    .filter(({ lesson, displayNum }) => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase().trim();
+      const numOnly = q.replace(/[^0-9]/g, '');
+      return (
+        (lesson.title || '').toLowerCase().includes(q) ||
+        (lesson.title_ur || '').toLowerCase().includes(q) ||
+        (lesson.title_bn || '').toLowerCase().includes(q) ||
+        String(lesson.lesson_number ?? '').includes(q) ||
+        String(displayNum).includes(q) ||
+        (numOnly !== '' && (
+          String(lesson.lesson_number ?? '') === numOnly ||
+          String(displayNum) === numOnly
+        ))
+      );
+    }), [lessons, search]);
 
   const getLessonTitle = (lesson: any) => {
     if (language === 'ur' && lesson.title_ur) return lesson.title_ur;
@@ -86,7 +112,7 @@ export default function StudentDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('general.gifts', language)}</p>
-                <p className="text-3xl font-heading font-bold">{gifts.length}</p>
+                <p className="text-3xl font-heading font-bold">{giftCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -113,26 +139,8 @@ export default function StudentDashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lessons
-              .map((lesson, i) => ({ lesson, displayNum: lesson.lesson_number ?? (i + 1), idx: i }))
-              .filter(({ lesson, displayNum }) => {
-                if (!search.trim()) return true;
-                const q = search.toLowerCase().trim();
-                const numOnly = q.replace(/[^0-9]/g, '');
-                return (
-                  (lesson.title || '').toLowerCase().includes(q) ||
-                  (lesson.title_ur || '').toLowerCase().includes(q) ||
-                  (lesson.title_bn || '').toLowerCase().includes(q) ||
-                  String(lesson.lesson_number ?? '').includes(q) ||
-                  String(displayNum).includes(q) ||
-                  (numOnly !== '' && (
-                    String(lesson.lesson_number ?? '') === numOnly ||
-                    String(displayNum) === numOnly
-                  ))
-                );
-              })
-              .map(({ lesson, displayNum, idx: i }) => {
-              const isCompleted = progress.some(p => p.lesson_id === lesson.id && p.completed);
+            {filteredLessons.map(({ lesson, displayNum, idx: i }) => {
+              const isCompleted = completedLessonIds.has(lesson.id);
               const lessonNum = lesson.lesson_number ?? (i + 1);
               return (
                 <Link key={lesson.id} to={`/lesson/${lesson.id}`}>

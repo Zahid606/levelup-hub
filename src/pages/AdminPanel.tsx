@@ -46,7 +46,12 @@ export default function AdminPanel() {
   const [giftHistory, setGiftHistory] = useState<any[]>([]);
   const [editingGift, setEditingGift] = useState<any | null>(null);
   const [totalAccounts, setTotalAccounts] = useState<number>(0);
+  const [totalCompletions, setTotalCompletions] = useState<number>(0);
+  const [totalPointSum, setTotalPointSum] = useState<number>(0);
   const [filterQuizLesson, setFilterQuizLesson] = useState<string>('all');
+  const [studentMetricsLoaded, setStudentMetricsLoaded] = useState(false);
+  const [staffLoaded, setStaffLoaded] = useState(false);
+  const [giftsLoaded, setGiftsLoaded] = useState(false);
 
   const [newLesson, setNewLesson] = useState<{ title: string; title_ur: string; title_bn: string; description: string; description_ur: string; description_bn: string; lesson_number: string }>({ title: '', title_ur: '', title_bn: '', description: '', description_ur: '', description_bn: '', lesson_number: '' });
   const [editingLesson, setEditingLesson] = useState<any | null>(null);
@@ -83,28 +88,59 @@ export default function AdminPanel() {
 
   async function loadAll() {
     const studentTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
-    const [lessonsRes, profilesRes, progressRes, pointsRes, answersRes, rolesRes, quizRes, giftsRes, historyRes] = await Promise.all([
-      supabase.from('lessons').select('*').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
-      (supabase as any).from(studentTable).select('*'),
-      hasFullAccess ? supabase.from('user_progress').select('*') : Promise.resolve({ data: [] }),
-      hasFullAccess ? supabase.from('user_points').select('*') : Promise.resolve({ data: [] }),
-      hasFullAccess ? supabase.from('quiz_answers').select('*') : Promise.resolve({ data: [] }),
-      hasFullAccess ? supabase.from('user_roles').select('*') : Promise.resolve({ data: [] }),
+    const [lessonsRes, profilesRes, summaryRes, quizRes] = await Promise.all([
+      supabase.from('lessons').select('id,title,title_ur,title_bn,description,description_ur,description_bn,lesson_number,sort_order,is_published,created_at').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
+      (supabase as any).from(studentTable).select('id,user_id,full_name,email,phone,gender,age,city,country,created_at'),
+      (supabase as any).rpc('get_admin_dashboard_summary').maybeSingle(),
       hasFullAccess ? supabase.from('quiz_questions').select('*').order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
-      hasFullAccess ? supabase.from('gifts').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
-      hasFullAccess ? (supabase as any).from('gift_history').select('*').order('changed_at', { ascending: false }).limit(200) : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
+    setQuizQuestions((quizRes as any).data || []);
+    setTotalAccounts(Number(summaryRes.data?.total_accounts || profilesRes.data?.length || 0));
+    setTotalCompletions(Number(summaryRes.data?.completions_count || 0));
+    setTotalPointSum(Number(summaryRes.data?.total_points || 0));
+    setStudentMetricsLoaded(false);
+    setStaffLoaded(false);
+    setGiftsLoaded(false);
+  }
+
+  async function loadStudentMetrics(force = false) {
+    if (!hasFullAccess || (!force && studentMetricsLoaded)) return;
+    const [progressRes, pointsRes, answersRes] = await Promise.all([
+      supabase.from('user_progress').select('user_id,lesson_id,completed').eq('completed', true),
+      supabase.from('user_points').select('user_id,points'),
+      supabase.from('quiz_answers').select('*'),
+    ]);
     setAllProgress(progressRes.data || []);
     setAllPoints(pointsRes.data || []);
     setQuizAnswers(answersRes.data || []);
-    setStaffRoles(rolesRes.data || []);
-    setQuizQuestions((quizRes as any).data || []);
+    setStudentMetricsLoaded(true);
+  }
+
+  async function loadStaffData(force = false) {
+    if (!hasFullAccess || (!force && staffLoaded)) return;
+    const { data } = await supabase.from('user_roles').select('*');
+    setStaffRoles(data || []);
+    setStaffLoaded(true);
+  }
+
+  async function loadGiftsData(force = false) {
+    if (!hasFullAccess || (!force && giftsLoaded)) return;
+    const [giftsRes, historyRes] = await Promise.all([
+      supabase.from('gifts').select('*').order('created_at', { ascending: false }).limit(300),
+      (supabase as any).from('gift_history').select('*').order('changed_at', { ascending: false }).limit(200),
+    ]);
     setGifts((giftsRes as any).data || []);
     setGiftHistory((historyRes as any).data || []);
-    setTotalAccounts((rolesRes.data as any[] | null)?.length || 0);
+    setGiftsLoaded(true);
   }
+
+  const handleTabChange = (value: string) => {
+    if (value === 'students' || value === 'analytics') void loadStudentMetrics();
+    if (value === 'staff') void loadStaffData();
+    if (value === 'gifts') void loadGiftsData();
+  };
 
   const addLesson = async () => {
     if (!canAddLesson) { toast.error('You do not have permission to add lessons'); return; }
@@ -386,11 +422,11 @@ export default function AdminPanel() {
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Students</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{totalAccounts}</p><p className="text-xs text-muted-foreground">Total Accounts</p></CardContent></Card>
-          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allProgress.filter(p => p.completed).length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
-          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allPoints.reduce((s, p) => s + p.points, 0)}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{totalCompletions}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{totalPointSum}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
         </div>}
 
-        <Tabs defaultValue="lessons">
+        <Tabs defaultValue="lessons" onValueChange={handleTabChange}>
           <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
