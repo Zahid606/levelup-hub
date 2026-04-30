@@ -449,6 +449,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_student_dashboard_summary: {
+        Args: { _user_id: string }
+        Returns: {
+          completed_count: number
+          gift_count: number
+          total_points: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
