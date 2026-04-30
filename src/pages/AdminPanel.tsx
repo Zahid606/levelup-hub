@@ -16,8 +16,8 @@ import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieCha
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+// xlsx + file-saver are loaded on-demand inside the export handler to keep the
+// initial admin bundle small.
 
 const ROLE_CONFIG = {
   admin: { label: 'Admin', icon: Shield, color: 'text-red-500', desc: 'Full access' },
@@ -362,6 +362,10 @@ export default function AdminPanel() {
       'Lessons Completed': getStudentProgress(s.user_id),
       'Joined': s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',
     }));
+    const [{ default: XLSX }, { saveAs }] = await Promise.all([
+      import('xlsx'),
+      import('file-saver'),
+    ]);
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Students');
