@@ -105,8 +105,8 @@ export default function AdminPanel() {
     setGiftsLoaded(false);
   }
 
-  async function loadStudentMetrics() {
-    if (!hasFullAccess || studentMetricsLoaded) return;
+  async function loadStudentMetrics(force = false) {
+    if (!hasFullAccess || (!force && studentMetricsLoaded)) return;
     const [progressRes, pointsRes, answersRes] = await Promise.all([
       supabase.from('user_progress').select('user_id,lesson_id,completed').eq('completed', true),
       supabase.from('user_points').select('user_id,points'),
@@ -118,15 +118,15 @@ export default function AdminPanel() {
     setStudentMetricsLoaded(true);
   }
 
-  async function loadStaffData() {
-    if (!hasFullAccess || staffLoaded) return;
+  async function loadStaffData(force = false) {
+    if (!hasFullAccess || (!force && staffLoaded)) return;
     const { data } = await supabase.from('user_roles').select('*');
     setStaffRoles(data || []);
     setStaffLoaded(true);
   }
 
-  async function loadGiftsData() {
-    if (!hasFullAccess || giftsLoaded) return;
+  async function loadGiftsData(force = false) {
+    if (!hasFullAccess || (!force && giftsLoaded)) return;
     const [giftsRes, historyRes] = await Promise.all([
       supabase.from('gifts').select('*').order('created_at', { ascending: false }).limit(300),
       (supabase as any).from('gift_history').select('*').order('changed_at', { ascending: false }).limit(200),
