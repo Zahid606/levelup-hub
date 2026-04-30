@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
-import { t } from '@/lib/i18n';
+import { t, type Language } from '@/lib/i18n';
 import { toast } from 'sonner';
-import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
@@ -19,7 +16,7 @@ const SAUDI_CITIES = [
 ];
 
 export default function Login() {
-  const { language } = useAuth();
+  const language = ((localStorage.getItem('lang') as Language) || 'en');
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
@@ -37,6 +34,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       if (isSignup) {
         const { error } = await supabase.auth.signUp({
           email, password,
@@ -127,12 +125,12 @@ export default function Login() {
             <Input type="email" placeholder={t('auth.email', language)} value={email} onChange={e => setEmail(e.target.value)} required />
             <div className="relative">
               <Input type={showPassword ? 'text' : 'password'} placeholder={t('auth.password', language)} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="pr-10" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
             <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
-              {isSignup ? <><UserPlus className="h-4 w-4 mr-2" />{t('auth.signup', language)}</> : <><LogIn className="h-4 w-4 mr-2" />{t('auth.login', language)}</>}
+              {isSignup ? t('auth.signup', language) : t('auth.login', language)}
             </Button>
           </form>
 
