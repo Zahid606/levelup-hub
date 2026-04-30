@@ -73,7 +73,7 @@ export default function Login() {
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
         <CardHeader className="text-center space-y-3">
           <div className="flex flex-col items-center gap-2">
-            <img src="/logo.png" alt={t('site.name', language)} className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+            <img src="/logo-small.webp" alt={t('site.name', language)} width="80" height="80" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
             <div>
               <p className="font-heading font-bold text-lg text-gradient" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</p>
               <p className="text-xs text-muted-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.tagline', language)}</p>
