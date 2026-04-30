@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { t, type Language } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -14,6 +13,8 @@ const SAUDI_CITIES = [
   'Buraidah', 'Khamis Mushait', 'Abha', 'Taif', 'Hail', 'Najran', 'Jubail', 'Yanbu',
   'Al Ahsa', 'Arar', 'Sakaka', 'Jizan', 'Al Baha', 'Bisha', 'Unaizah', 'Qatif', 'Other'
 ];
+
+const selectClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
 
 export default function Login() {
   const language = ((localStorage.getItem('lang') as Language) || 'en');
