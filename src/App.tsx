@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "sonner";
 
 // Lazy-load route components so each page only loads when visited.
 // This dramatically reduces the initial JS bundle (xlsx, charts, admin code, etc.).
@@ -15,6 +14,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
+const Sonner = lazy(() => import("sonner").then((m) => ({ default: m.Toaster })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +50,9 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <Sonner />
+    <Suspense fallback={null}>
+      <Sonner />
+    </Suspense>
     <BrowserRouter>
       <AppRoutes />
     </BrowserRouter>
