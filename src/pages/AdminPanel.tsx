@@ -378,9 +378,10 @@ export default function AdminPanel() {
       <main className="container py-8 space-y-6">
         <h1 className="text-3xl font-heading font-bold">{t('admin.dashboard', language)}</h1>
 
-        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {hasFullAccess && <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{lessons.length}</p><p className="text-xs text-muted-foreground">Lessons</p></CardContent></Card>
-          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Users</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Students</p></CardContent></Card>
+          <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{totalAccounts}</p><p className="text-xs text-muted-foreground">Total Accounts</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allProgress.filter(p => p.completed).length}</p><p className="text-xs text-muted-foreground">Completions</p></CardContent></Card>
           <Card className="glass-card"><CardContent className="p-4 text-center"><p className="text-3xl font-heading font-bold">{allPoints.reduce((s, p) => s + p.points, 0)}</p><p className="text-xs text-muted-foreground">Total Points</p></CardContent></Card>
         </div>}
