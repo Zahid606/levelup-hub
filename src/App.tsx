@@ -1,10 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 // Lazy-load route components so each page only loads when visited.
 // This dramatically reduces the initial JS bundle (xlsx, charts, admin code, etc.).
@@ -16,6 +12,9 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const AdminRoute = lazy(() => import("./components/AdminRoute"));
+const Sonner = lazy(() => import("sonner").then((m) => ({ default: m.Toaster })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,33 +33,11 @@ const PageLoader = () => (
   </div>
 );
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-}
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isManager, isVolunteer, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/admin-login" replace />;
-  if (!isAdmin && !isManager && !isVolunteer) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
 const AppRoutes = () => (
   <Suspense fallback={<PageLoader />}>
     <Routes>
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/admin-login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
       <Route path="/lesson/:id" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
@@ -73,15 +50,12 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
+    <Suspense fallback={null}>
       <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    </Suspense>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

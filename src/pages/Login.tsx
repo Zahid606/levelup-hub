@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
-import { t } from '@/lib/i18n';
+import { t, type Language } from '@/lib/i18n';
 import { toast } from 'sonner';
-import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
@@ -18,8 +14,10 @@ const SAUDI_CITIES = [
   'Al Ahsa', 'Arar', 'Sakaka', 'Jizan', 'Al Baha', 'Bisha', 'Unaizah', 'Qatif', 'Other'
 ];
 
+const selectClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+
 export default function Login() {
-  const { language } = useAuth();
+  const language = ((localStorage.getItem('lang') as Language) || 'en');
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
@@ -37,6 +35,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       if (isSignup) {
         const { error } = await supabase.auth.signUp({
           email, password,
@@ -75,7 +74,7 @@ export default function Login() {
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
         <CardHeader className="text-center space-y-3">
           <div className="flex flex-col items-center gap-2">
-            <img src="/logo.png" alt={t('site.name', language)} className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+            <img src="/logo-small.webp" alt={t('site.name', language)} width="80" height="80" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
             <div>
               <p className="font-heading font-bold text-lg text-gradient" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</p>
               <p className="text-xs text-muted-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.tagline', language)}</p>
@@ -92,33 +91,21 @@ export default function Login() {
               <>
                 <Input placeholder={t('auth.fullName', language)} value={fullName} onChange={e => setFullName(e.target.value)} required />
                 <Input type="tel" placeholder={t('login.phone', language)} value={phone} onChange={e => setPhone(e.target.value)} />
-                <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('login.gender', language)} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">{t('login.male', language)}</SelectItem>
-                    <SelectItem value="female">{t('login.female', language)}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select className={selectClass} value={gender} onChange={e => setGender(e.target.value)}>
+                  <option value="">{t('login.gender', language)}</option>
+                  <option value="male">{t('login.male', language)}</option>
+                  <option value="female">{t('login.female', language)}</option>
+                </select>
                 <Input type="number" placeholder={t('login.age', language)} min={1} max={120} value={age} onChange={e => setAge(e.target.value)} />
-                <Select value={country} onValueChange={v => { setCountry(v); setCity(''); }}>
-                  <SelectTrigger><SelectValue placeholder={t('login.country', language)} /></SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select className={selectClass} value={country} onChange={e => { setCountry(e.target.value); setCity(''); }}>
+                  <option value="">{t('login.country', language)}</option>
+                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
                 {country === 'Saudi Arabia' ? (
-                  <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger><SelectValue placeholder={t('login.city', language)} /></SelectTrigger>
-                    <SelectContent>
-                      {SAUDI_CITIES.map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select className={selectClass} value={city} onChange={e => setCity(e.target.value)}>
+                    <option value="">{t('login.city', language)}</option>
+                    {SAUDI_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 ) : (
                   <Input placeholder={t('login.cityCustom', language)} value={city} onChange={e => setCity(e.target.value)} />
                 )}
@@ -127,12 +114,12 @@ export default function Login() {
             <Input type="email" placeholder={t('auth.email', language)} value={email} onChange={e => setEmail(e.target.value)} required />
             <div className="relative">
               <Input type={showPassword ? 'text' : 'password'} placeholder={t('auth.password', language)} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="pr-10" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
             <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
-              {isSignup ? <><UserPlus className="h-4 w-4 mr-2" />{t('auth.signup', language)}</> : <><LogIn className="h-4 w-4 mr-2" />{t('auth.login', language)}</>}
+              {isSignup ? t('auth.signup', language) : t('auth.login', language)}
             </Button>
           </form>
 
