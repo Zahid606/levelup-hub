@@ -449,6 +449,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_dashboard_summary: {
+        Args: never
+        Returns: {
+          completions_count: number
+          student_count: number
+          total_accounts: number
+          total_points: number
+        }[]
+      }
       get_student_dashboard_summary: {
         Args: { _user_id: string }
         Returns: {
