@@ -50,7 +50,7 @@ export default function AdminLogin() {
         <CardHeader className="text-center space-y-3">
           <div className="flex flex-col items-center gap-2">
             <div className="relative">
-              <img src="/logo.png" alt="Misk-ul-Kalam" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
+              <img src="/logo-small.webp" alt="Misk-ul-Kalam" width="80" height="80" className="h-20 w-20 rounded-full object-cover ring-2 ring-accent/40 shadow-lg" />
               <div className="absolute -bottom-1 -right-1 bg-accent text-accent-foreground rounded-full px-1.5 py-0.5 text-[10px] font-bold">A</div>
             </div>
             <div>
