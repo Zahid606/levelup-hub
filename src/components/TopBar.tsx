@@ -1,4 +1,4 @@
-import logoImg from '@/assets/logo.png';
+import logoImg from '@/assets/logo-small.webp';
 import { useAuth } from '@/contexts/AuthContext';
 import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
