@@ -869,6 +869,81 @@ export default function AdminPanel() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Gift list */}
+            <div className="space-y-2">
+              <h3 className="font-heading font-semibold text-lg flex items-center gap-2"><Gift className="h-5 w-5 text-accent" /> Current Gifts ({gifts.length})</h3>
+              {gifts.length === 0 && <p className="text-sm text-muted-foreground">No gifts yet.</p>}
+              {gifts.map(g => {
+                const recipient = students.find(s => s.user_id === g.user_id);
+                return (
+                  <Card key={g.id} className="glass-card">
+                    <CardContent className="p-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">🎁 {g.gift_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">For: {recipient?.full_name || 'Unknown'}</p>
+                        {g.description && <p className="text-xs text-muted-foreground truncate">{g.description}</p>}
+                        <p className="text-xs text-muted-foreground">{new Date(g.created_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingGift({ ...g })}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteGift(g.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Gift history */}
+            <div className="space-y-2 pt-2">
+              <h3 className="font-heading font-semibold text-lg">📜 Gift History</h3>
+              {giftHistory.length === 0 && <p className="text-sm text-muted-foreground">No history yet.</p>}
+              {giftHistory.map(h => {
+                const recipient = students.find(s => s.user_id === h.user_id);
+                const actorProfile = students.find(s => s.user_id === h.changed_by);
+                const color = h.action === 'created' ? 'text-green-500' : h.action === 'updated' ? 'text-amber-500' : 'text-destructive';
+                return (
+                  <Card key={h.id} className="glass-card">
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">
+                          <span className={`font-semibold capitalize ${color}`}>{h.action}</span>
+                          <span className="text-muted-foreground"> — {h.gift_name || 'Gift'}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          For: {recipient?.full_name || 'Unknown'}
+                          {actorProfile?.full_name && <> • By: {actorProfile.full_name}</>}
+                        </p>
+                        {h.description && <p className="text-xs text-muted-foreground truncate">{h.description}</p>}
+                      </div>
+                      <p className="text-xs text-muted-foreground flex-shrink-0">{new Date(h.changed_at).toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Edit gift dialog */}
+            <Dialog open={!!editingGift} onOpenChange={o => { if (!o) setEditingGift(null); }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Edit Gift</DialogTitle></DialogHeader>
+                {editingGift && (
+                  <div className="space-y-3">
+                    <Input placeholder="Gift Name" value={editingGift.gift_name || ''} onChange={e => setEditingGift({ ...editingGift, gift_name: e.target.value })} />
+                    <Input placeholder="Description" value={editingGift.description || ''} onChange={e => setEditingGift({ ...editingGift, description: e.target.value })} />
+                    <div className="flex gap-2">
+                      <Button onClick={updateGift} className="flex-1 gradient-primary text-primary-foreground">{t('general.save', language)}</Button>
+                      <Button onClick={() => setEditingGift(null)} variant="secondary" className="flex-1">{t('general.cancel', language)}</Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* STAFF TAB */}
