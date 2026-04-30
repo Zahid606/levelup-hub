@@ -16,6 +16,7 @@ export default function StudentDashboard() {
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(() => new Set());
   const [totalPoints, setTotalPoints] = useState(0);
   const [giftCount, setGiftCount] = useState(0);
+  const [gifts, setGifts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -32,7 +33,14 @@ export default function StudentDashboard() {
     setLessons(lessonsRes.data || []);
     setCompletedLessonIds(new Set((progressRes.data || []).map((p: any) => p.lesson_id)));
     setTotalPoints(Number(summaryRes.data?.total_points || 0));
-    setGiftCount(Number(summaryRes.data?.gift_count || 0));
+    const nextGiftCount = Number(summaryRes.data?.gift_count || 0);
+    setGiftCount(nextGiftCount);
+    if (nextGiftCount > 0) {
+      supabase.from('gifts').select('id,gift_name,description').eq('user_id', user!.id).order('created_at', { ascending: false }).limit(20)
+        .then(({ data }) => setGifts(data || []));
+    } else {
+      setGifts([]);
+    }
   }
 
   const completedCount = completedLessonIds.size;
@@ -171,6 +179,24 @@ export default function StudentDashboard() {
         </div>
 
         {/* Gifts Section */}
+        {gifts.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-heading font-bold mb-4">{t('general.gifts', language)} 🎁</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {gifts.map(gift => (
+                <Card key={gift.id} className="glass-card border-accent/20">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Gift className="h-8 w-8 text-accent" />
+                    <div>
+                      <p className="font-semibold">{gift.gift_name}</p>
+                      {gift.description && <p className="text-xs text-muted-foreground">{gift.description}</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
