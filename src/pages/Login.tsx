@@ -146,6 +146,11 @@ export default function Login() {
               {t('auth.adminLogin', language)} →
             </Link>
           </div>
+          <div className="mt-4 pt-4 border-t border-border text-center space-y-1">
+            <p className="text-xs text-muted-foreground">Contact / رابطہ</p>
+            <a href="tel:+966595229775" className="block text-sm font-medium text-primary hover:underline" dir="ltr">+966 595 229 775</a>
+            <a href="tel:+966567035796" className="block text-sm font-medium text-primary hover:underline" dir="ltr">+966 567 035 796</a>
+          </div>
         </CardContent>
       </Card>
     </div>
