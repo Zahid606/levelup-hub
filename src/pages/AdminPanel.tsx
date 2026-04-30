@@ -348,7 +348,7 @@ export default function AdminPanel() {
   };
 
   // Export to Excel
-  const exportStudentsToExcel = () => {
+  const exportStudentsToExcel = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can export student data'); return; }
     const data = filteredStudents.map(s => ({
       'Name': s.full_name || 'N/A',
