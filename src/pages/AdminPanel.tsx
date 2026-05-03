@@ -379,13 +379,17 @@ export default function AdminPanel() {
           'Authorization': `Bearer ${session?.access_token ?? ''}`,
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ user_id: resetPasswordStudent.user_id, new_password: newPassword }),
+        body: JSON.stringify({
+          user_id: resetPasswordStudent.user_id,
+          email: resetPasswordStudent.email,
+          new_password: newPassword,
+        }),
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok || json?.error) {
         throw new Error(json?.error || `Failed to reset password (HTTP ${resp.status})`);
       }
-      toast.success(`Password reset for ${resetPasswordStudent.full_name || 'student'}! They can now log in with the new password.`);
+      toast.success(`Password reset for ${resetPasswordStudent.email || resetPasswordStudent.full_name || 'student'}! The backend verified the new password works.`);
       setResetPasswordStudent(null); setNewPassword('');
     } catch (err: any) {
       toast.error(err.message);
