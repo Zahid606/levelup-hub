@@ -882,6 +882,9 @@ export default function AdminPanel() {
                     <p className="text-sm text-muted-foreground">
                       Reset password for <strong>{resetPasswordStudent.full_name || 'student'}</strong>
                     </p>
+                    {resetPasswordStudent.email && (
+                      <p className="text-xs text-muted-foreground break-all">Login email: {resetPasswordStudent.email}</p>
+                    )}
                     <div className="relative">
                       <Input type={showNewPassword ? 'text' : 'password'} placeholder="New Password (min 6 chars)" value={newPassword} onChange={e => setNewPassword(e.target.value)} minLength={6} className="pr-10" />
                       <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
