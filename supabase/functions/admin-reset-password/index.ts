@@ -45,9 +45,19 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password: new_password });
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+      password: new_password,
+      email_confirm: true,
+    });
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `Auth update failed: ${error.message}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Revoke any existing sessions so old cached tokens cannot be used
+    try {
+      await supabaseAdmin.auth.admin.signOut(user_id, "global");
+    } catch (_) {
+      // non-fatal — password is already updated
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });

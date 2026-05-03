@@ -369,12 +369,23 @@ export default function AdminPanel() {
     if (!resetPasswordStudent || !newPassword) return;
     setResettingPassword(true);
     try {
-      const res = await supabase.functions.invoke('admin-reset-password', {
-        body: { user_id: resetPasswordStudent.user_id, new_password: newPassword },
+      // Call edge function directly so we can read the JSON error body even on non-2xx
+      const { data: { session } } = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ user_id: resetPasswordStudent.user_id, new_password: newPassword }),
       });
-      if (res.error) throw new Error(res.error.message || 'Failed to reset password');
-      if (res.data?.error) throw new Error(res.data.error);
-      toast.success(`Password reset for ${resetPasswordStudent.full_name || 'student'}!`);
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok || json?.error) {
+        throw new Error(json?.error || `Failed to reset password (HTTP ${resp.status})`);
+      }
+      toast.success(`Password reset for ${resetPasswordStudent.full_name || 'student'}! They can now log in with the new password.`);
       setResetPasswordStudent(null); setNewPassword('');
     } catch (err: any) {
       toast.error(err.message);
