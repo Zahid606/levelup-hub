@@ -4,7 +4,7 @@ import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon, Sun, Trophy, Shield, Mail } from 'lucide-react';
+import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
 
