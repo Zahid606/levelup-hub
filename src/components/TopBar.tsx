@@ -4,7 +4,7 @@ import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon, Sun, Trophy, Shield, Mail } from 'lucide-react';
+import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
 
@@ -79,6 +79,29 @@ export function TopBar() {
           )}
         </div>
       </div>
+
+      {user && (
+        <nav className="md:hidden flex items-center justify-around border-t border-border/50 bg-background/40 backdrop-blur px-2 py-1.5">
+          <Link to="/" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
+            <BookOpen className="h-4 w-4" />
+            {t('nav.lessons', language)}
+          </Link>
+          <Link to="/leaderboard" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
+            <Trophy className="h-4 w-4" />
+            {t('nav.leaderboard', language)}
+          </Link>
+          <Link to="/contact" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
+            <Mail className="h-4 w-4" />
+            {t('nav.contact', language)}
+          </Link>
+          {(isAdmin || isManager || isEmployee || isVolunteer) && (
+            <Link to="/admin" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
+              <Shield className="h-4 w-4" />
+              {t('nav.admin', language)}
+            </Link>
+          )}
+        </nav>
+      )}
     </header>
   );
 }

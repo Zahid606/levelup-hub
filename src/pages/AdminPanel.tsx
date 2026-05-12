@@ -32,7 +32,8 @@ export default function AdminPanel() {
   const hasLimitedVolunteerAccess = isVolunteer && !hasFullAccess;
   const canAddLesson = hasFullAccess || hasLimitedVolunteerAccess;
   const canAddStudent = hasFullAccess || hasLimitedVolunteerAccess;
-  const canDelete = hasFullAccess; // volunteers cannot delete
+  const canManageContent = hasFullAccess || hasLimitedVolunteerAccess; // lessons/videos/quizzes
+  const canDelete = hasFullAccess; // student/staff/gift deletes — admin/manager only
 
   const [lessons, setLessons] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -92,7 +93,7 @@ export default function AdminPanel() {
       supabase.from('lessons').select('id,title,title_ur,title_bn,description,description_ur,description_bn,lesson_number,sort_order,is_published,created_at').order('lesson_number', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }),
       (supabase as any).from(studentTable).select('id,user_id,full_name,email,phone,gender,age,city,country,created_at'),
       (supabase as any).rpc('get_admin_dashboard_summary').maybeSingle(),
-      hasFullAccess ? supabase.from('quiz_questions').select('*').order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
+      canManageContent ? supabase.from('quiz_questions').select('*').order('sort_order', { ascending: true }) : Promise.resolve({ data: [] }),
     ]);
     setLessons(lessonsRes.data || []);
     setStudents(profilesRes.data || []);
@@ -163,7 +164,7 @@ export default function AdminPanel() {
   };
 
   const updateLesson = async () => {
-    if (!hasFullAccess) { toast.error('Only managers and admins can edit lessons'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to edit lessons'); return; }
     if (!editingLesson) return;
     const { error } = await supabase.from('lessons').update({
       title: editingLesson.title, title_ur: editingLesson.title_ur, title_bn: editingLesson.title_bn,
@@ -176,7 +177,7 @@ export default function AdminPanel() {
   };
 
   const addVideo = async () => {
-    if (!hasFullAccess) { toast.error('Only managers and admins can add videos'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to add videos'); return; }
     const { error } = await supabase.from('lesson_content').insert({ lesson_id: newVideo.lesson_id, title: newVideo.title, youtube_url: newVideo.youtube_url, video_points: newVideo.video_points } as any);
     if (error) { toast.error(error.message); return; }
     toast.success('Video added!');
@@ -184,7 +185,7 @@ export default function AdminPanel() {
   };
 
   const addQuizQuestion = async () => {
-    if (!hasFullAccess) { toast.error('Only managers and admins can add quizzes'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to add quizzes'); return; }
     const { error } = await supabase.from('quiz_questions').insert({
       lesson_id: newQuiz.lesson_id, question: newQuiz.question,
       question_ur: newQuiz.question_ur || null, question_bn: newQuiz.question_bn || null,
@@ -200,7 +201,7 @@ export default function AdminPanel() {
   };
 
   const updateQuizQuestion = async () => {
-    if (!hasFullAccess) { toast.error('Only managers and admins can edit quizzes'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to edit quizzes'); return; }
     if (!editingQuiz) return;
     const { error } = await supabase.from('quiz_questions').update({
       question: editingQuiz.question,
@@ -219,7 +220,7 @@ export default function AdminPanel() {
   };
 
   const deleteQuizQuestion = async (id: string) => {
-    if (!canDelete) { toast.error('Only managers and admins can delete quizzes'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to delete quizzes'); return; }
     if (!confirm('Delete this quiz question?')) return;
     const { error } = await supabase.from('quiz_questions').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
@@ -310,13 +311,13 @@ export default function AdminPanel() {
   };
 
   const deleteLesson = async (id: string) => {
-    if (!canDelete) { toast.error('Volunteers cannot delete content'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to delete lessons'); return; }
     await supabase.from('lessons').delete().eq('id', id);
     toast.success('Lesson deleted'); loadAll();
   };
 
   const togglePublish = async (id: string, current: boolean) => {
-    if (!hasFullAccess) { toast.error('Only managers and admins can publish or unpublish lessons'); return; }
+    if (!canManageContent) { toast.error('You do not have permission to publish lessons'); return; }
     await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
   };
 
@@ -470,7 +471,7 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>
 
-              {hasFullAccess && <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
+              {canManageContent && <Dialog open={dialogOpen === 'video'} onOpenChange={o => setDialogOpen(o ? 'video' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><Video className="h-4 w-4 mr-1" />{t('admin.addVideo', language)}</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t('admin.addVideo', language)}</DialogTitle></DialogHeader>
@@ -490,7 +491,7 @@ export default function AdminPanel() {
                 </DialogContent>
               </Dialog>}
 
-              {hasFullAccess && <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
+              {canManageContent && <Dialog open={dialogOpen === 'quiz'} onOpenChange={o => setDialogOpen(o ? 'quiz' : '')}>
                 <DialogTrigger asChild><Button variant="secondary"><HelpCircle className="h-4 w-4 mr-1" />{t('admin.addQuiz', language)}</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>{t('admin.addQuiz', language)}</DialogTitle></DialogHeader>
@@ -548,14 +549,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {hasFullAccess && <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>}
-                      {hasFullAccess && <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />}
-                      {hasFullAccess && (
+                      {canManageContent && <span className="text-xs text-muted-foreground hidden sm:inline">{lesson.is_published ? 'Published' : 'Draft'}</span>}
+                      {canManageContent && <Switch checked={lesson.is_published} onCheckedChange={() => togglePublish(lesson.id, lesson.is_published)} />}
+                      {canManageContent && (
                         <Button variant="ghost" size="sm" onClick={() => setEditingLesson({ ...lesson })}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                      {canDelete && (
+                      {canManageContent && (
                         <Button variant="ghost" size="sm" onClick={() => deleteLesson(lesson.id)} className="text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -591,7 +592,7 @@ export default function AdminPanel() {
             </Dialog>
 
             {/* QUIZ QUESTIONS LIST */}
-            {hasFullAccess && (
+            {canManageContent && (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="font-heading font-semibold text-lg flex items-center gap-2">
@@ -630,7 +631,7 @@ export default function AdminPanel() {
                               })}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              {canDelete && (
+                              {canManageContent && (
                                 <Button variant="ghost" size="sm" onClick={() => deleteQuizQuestion(q.id)} className="text-destructive hover:text-destructive">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
