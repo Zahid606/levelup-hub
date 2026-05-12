@@ -592,7 +592,7 @@ export default function AdminPanel() {
             </Dialog>
 
             {/* QUIZ QUESTIONS LIST */}
-            {hasFullAccess && (
+            {canManageContent && (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="font-heading font-semibold text-lg flex items-center gap-2">
