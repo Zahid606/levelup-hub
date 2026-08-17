@@ -206,23 +206,33 @@ export default function LessonDetail() {
   const handleVideoComplete = useCallback(async (contentId: string, points: number) => {
     if (!user || completedVideos.has(contentId)) return;
     setCompletedVideos(prev => new Set([...prev, contentId]));
-    
-    await supabase.from('video_completions').upsert({ user_id: user.id, content_id: contentId });
+
+    const { error: saveError } = await supabase
+      .from('video_completions')
+      .upsert({ user_id: user.id, content_id: contentId }, { onConflict: 'user_id,content_id', ignoreDuplicates: true });
+
+    if (saveError) {
+      toast.error('Could not save your progress. Please check your connection.');
+      setCompletedVideos(prev => { const next = new Set(prev); next.delete(contentId); return next; });
+      return;
+    }
+
     if (points > 0) {
       await supabase.from('user_points').insert({ user_id: user.id, points, reason: `Watched video` });
       toast.success(`+${points} ${t('points.total', language)} for watching! 🎬`);
     }
 
-    // Check if all videos are now completed → auto-complete lesson
+    // Check if all videos are now completed → auto-complete lesson & unlock quiz
     const updatedCompleted = new Set([...completedVideos, contentId]);
     const allDone = content.every(c => updatedCompleted.has(c.id));
     if (allDone && id) {
       await supabase.from('user_progress').upsert({
         user_id: user.id, lesson_id: id, completed: true, completed_at: new Date().toISOString()
-      });
-      toast.success('Lesson auto-completed! 🎉');
+      }, { onConflict: 'user_id,lesson_id' });
+      toast.success('Lesson completed — quiz unlocked! 🎉');
     }
   }, [user, completedVideos, content, language, id]);
+
 
   const allVideosCompleted = content.length === 0 || content.every(c => completedVideos.has(c.id));
 
