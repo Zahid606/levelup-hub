@@ -418,7 +418,10 @@ export default function LessonDetail() {
             )}
           </Card>
         )}
+
+        {id && <StudentSupportPanel lessonId={id} />}
       </main>
+
     </div>
   );
 }
