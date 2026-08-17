@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
+import { NotificationBell } from '@/components/NotificationBell';
+
 
 
 export function TopBar() {
