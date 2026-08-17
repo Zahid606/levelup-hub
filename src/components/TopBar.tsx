@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProfileSettings } from '@/components/ProfileSettings';
+import { NotificationBell } from '@/components/NotificationBell';
+
 
 
 export function TopBar() {
@@ -70,7 +72,9 @@ export function TopBar() {
 
           {user && (
             <>
+              <NotificationBell />
               <ProfileSettings />
+
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
                 <LogOut className="h-4 w-4 mr-1" />
                 <span className="hidden md:inline">{t('auth.logout', language)}</span>

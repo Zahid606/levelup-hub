@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Play, Lock, Star, List } from 'lucide-react';
+import { StudentSupportPanel } from '@/components/StudentSupportPanel';
+
 
 declare global {
   interface Window {
@@ -42,8 +44,11 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const maxReachedRef = useRef(0);
+  const completedRef = useRef(isCompleted);
   const [watchPercent, setWatchPercent] = useState(isCompleted ? 100 : 0);
   const ytReady = useYouTubeAPI();
+
+  useEffect(() => { completedRef.current = isCompleted; }, [isCompleted]);
 
   useEffect(() => {
     if (!ytReady || !containerRef.current || isCompleted) return;
@@ -53,6 +58,15 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
       el.id = divId;
       containerRef.current.appendChild(el);
     }
+
+    const finish = () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      clearInterval(intervalRef.current);
+      setWatchPercent(100);
+      onComplete(contentId, videoPoints);
+    };
+
     playerRef.current = new window.YT.Player(divId, {
       videoId,
       width: '100%',
@@ -66,12 +80,20 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
       },
       events: {
         onStateChange: (e: any) => {
+          if (e.data === window.YT.PlayerState.ENDED) {
+            // Reaching the end always counts as 100%
+            maxReachedRef.current = Math.max(maxReachedRef.current, playerRef.current?.getDuration?.() || 0);
+            finish();
+            return;
+          }
           if (e.data === window.YT.PlayerState.PLAYING) {
+            clearInterval(intervalRef.current);
             intervalRef.current = setInterval(() => {
               const p = playerRef.current;
               if (!p?.getCurrentTime || !p?.getDuration) return;
               const currentTime = p.getCurrentTime();
               const duration = p.getDuration();
+              if (!duration) return;
 
               // Anti-cheat: if user skipped forward beyond what they've watched, seek back
               if (currentTime > maxReachedRef.current + 3) {
@@ -81,13 +103,13 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               }
               maxReachedRef.current = Math.max(maxReachedRef.current, currentTime);
 
-              const pct = Math.round((maxReachedRef.current / duration) * 100);
+              const remaining = duration - maxReachedRef.current;
+              const pct = Math.min(100, Math.floor((maxReachedRef.current / duration) * 100));
+              // The last poll can land just short of the end — treat the final
+              // 2 seconds (or 99%+) as fully watched so it never sticks at 99%.
+              if (remaining <= 2 || pct >= 99) { finish(); return; }
               setWatchPercent(pct);
-              if (pct >= 100) {
-                clearInterval(intervalRef.current);
-                onComplete(contentId, videoPoints);
-              }
-            }, 1500);
+            }, 1000);
           } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
@@ -100,6 +122,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
     });
     return () => { clearInterval(intervalRef.current); playerRef.current?.destroy?.(); };
   }, [ytReady, videoId, contentId, isCompleted]);
+
 
   // Anti-cheat: disable right-click on video area
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -185,23 +208,33 @@ export default function LessonDetail() {
   const handleVideoComplete = useCallback(async (contentId: string, points: number) => {
     if (!user || completedVideos.has(contentId)) return;
     setCompletedVideos(prev => new Set([...prev, contentId]));
-    
-    await supabase.from('video_completions').upsert({ user_id: user.id, content_id: contentId });
+
+    const { error: saveError } = await supabase
+      .from('video_completions')
+      .upsert({ user_id: user.id, content_id: contentId }, { onConflict: 'user_id,content_id', ignoreDuplicates: true });
+
+    if (saveError) {
+      toast.error('Could not save your progress. Please check your connection.');
+      setCompletedVideos(prev => { const next = new Set(prev); next.delete(contentId); return next; });
+      return;
+    }
+
     if (points > 0) {
       await supabase.from('user_points').insert({ user_id: user.id, points, reason: `Watched video` });
       toast.success(`+${points} ${t('points.total', language)} for watching! 🎬`);
     }
 
-    // Check if all videos are now completed → auto-complete lesson
+    // Check if all videos are now completed → auto-complete lesson & unlock quiz
     const updatedCompleted = new Set([...completedVideos, contentId]);
     const allDone = content.every(c => updatedCompleted.has(c.id));
     if (allDone && id) {
       await supabase.from('user_progress').upsert({
         user_id: user.id, lesson_id: id, completed: true, completed_at: new Date().toISOString()
-      });
-      toast.success('Lesson auto-completed! 🎉');
+      }, { onConflict: 'user_id,lesson_id' });
+      toast.success('Lesson completed — quiz unlocked! 🎉');
     }
   }, [user, completedVideos, content, language, id]);
+
 
   const allVideosCompleted = content.length === 0 || content.every(c => completedVideos.has(c.id));
 
@@ -385,7 +418,10 @@ export default function LessonDetail() {
             )}
           </Card>
         )}
+
+        {id && <StudentSupportPanel lessonId={id} />}
       </main>
+
     </div>
   );
 }
