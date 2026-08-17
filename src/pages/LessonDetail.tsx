@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Play, Lock, Star, List } from 'lucide-react';
+import { StudentSupportPanel } from '@/components/StudentSupportPanel';
+
 
 declare global {
   interface Window {
