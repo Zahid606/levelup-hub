@@ -163,6 +163,53 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          lesson_id: string | null
+          link: string | null
+          message: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          lesson_id?: string | null
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          lesson_id?: string | null
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
@@ -341,6 +388,130 @@ export type Database = {
         }
         Relationships: []
       }
+      student_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string | null
+          message: string | null
+          rating: number | null
+          reviewed: boolean
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          message?: string | null
+          rating?: number | null
+          reviewed?: boolean
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          message?: string | null
+          rating?: number | null
+          reviewed?: boolean
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_feedback_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_questions: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          answered_by: string | null
+          created_at: string
+          id: string
+          lesson_id: string | null
+          question: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          question: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          answered_by?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          question?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          escalated: boolean
+          handled_by: string | null
+          id: string
+          severity: string
+          status: string
+          student_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          escalated?: boolean
+          handled_by?: string | null
+          id?: string
+          severity?: string
+          status?: string
+          student_id: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          escalated?: boolean
+          handled_by?: string | null
+          id?: string
+          severity?: string
+          status?: string
+          student_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string
@@ -444,6 +615,30 @@ export type Database = {
           },
         ]
       }
+      volunteer_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          student_id: string
+          volunteer_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          student_id: string
+          volunteer_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          student_id?: string
+          volunteer_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -464,6 +659,16 @@ export type Database = {
           completed_count: number
           gift_count: number
           total_points: number
+        }[]
+      }
+      get_volunteer_dashboard_summary: {
+        Args: { _volunteer_id: string }
+        Returns: {
+          inactive_students: number
+          new_feedback: number
+          open_questions: number
+          open_reports: number
+          student_count: number
         }[]
       }
       has_role: {
