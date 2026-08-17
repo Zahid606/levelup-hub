@@ -72,7 +72,9 @@ export function TopBar() {
 
           {user && (
             <>
+              <NotificationBell />
               <ProfileSettings />
+
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
                 <LogOut className="h-4 w-4 mr-1" />
                 <span className="hidden md:inline">{t('auth.logout', language)}</span>
