@@ -443,13 +443,20 @@ export default function AdminPanel() {
         </div>}
 
         <Tabs defaultValue="lessons" onValueChange={handleTabChange}>
-          <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-5' : 'grid-cols-2'}`}>
+          <TabsList className={`grid w-full max-w-2xl ${hasFullAccess ? 'grid-cols-6' : 'grid-cols-3'}`}>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
             {hasFullAccess && <TabsTrigger value="analytics"><PieChart className="h-4 w-4 mr-1 inline" />Analytics</TabsTrigger>}
             {hasFullAccess && <TabsTrigger value="gifts">Gifts</TabsTrigger>}
             {hasFullAccess && <TabsTrigger value="staff">Staff</TabsTrigger>}
           </TabsList>
+
+          {/* VOLUNTEERS TAB */}
+          <TabsContent value="volunteers" className="space-y-4">
+            <VolunteerWorkspace hasFullAccess={hasFullAccess} />
+          </TabsContent>
+
 
           {/* LESSONS TAB */}
           <TabsContent value="lessons" className="space-y-4">
