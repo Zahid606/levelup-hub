@@ -42,8 +42,11 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const maxReachedRef = useRef(0);
+  const completedRef = useRef(isCompleted);
   const [watchPercent, setWatchPercent] = useState(isCompleted ? 100 : 0);
   const ytReady = useYouTubeAPI();
+
+  useEffect(() => { completedRef.current = isCompleted; }, [isCompleted]);
 
   useEffect(() => {
     if (!ytReady || !containerRef.current || isCompleted) return;
@@ -53,6 +56,15 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
       el.id = divId;
       containerRef.current.appendChild(el);
     }
+
+    const finish = () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      clearInterval(intervalRef.current);
+      setWatchPercent(100);
+      onComplete(contentId, videoPoints);
+    };
+
     playerRef.current = new window.YT.Player(divId, {
       videoId,
       width: '100%',
@@ -66,12 +78,20 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
       },
       events: {
         onStateChange: (e: any) => {
+          if (e.data === window.YT.PlayerState.ENDED) {
+            // Reaching the end always counts as 100%
+            maxReachedRef.current = Math.max(maxReachedRef.current, playerRef.current?.getDuration?.() || 0);
+            finish();
+            return;
+          }
           if (e.data === window.YT.PlayerState.PLAYING) {
+            clearInterval(intervalRef.current);
             intervalRef.current = setInterval(() => {
               const p = playerRef.current;
               if (!p?.getCurrentTime || !p?.getDuration) return;
               const currentTime = p.getCurrentTime();
               const duration = p.getDuration();
+              if (!duration) return;
 
               // Anti-cheat: if user skipped forward beyond what they've watched, seek back
               if (currentTime > maxReachedRef.current + 3) {
@@ -81,13 +101,13 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               }
               maxReachedRef.current = Math.max(maxReachedRef.current, currentTime);
 
-              const pct = Math.round((maxReachedRef.current / duration) * 100);
+              const remaining = duration - maxReachedRef.current;
+              const pct = Math.min(100, Math.floor((maxReachedRef.current / duration) * 100));
+              // The last poll can land just short of the end — treat the final
+              // 2 seconds (or 99%+) as fully watched so it never sticks at 99%.
+              if (remaining <= 2 || pct >= 99) { finish(); return; }
               setWatchPercent(pct);
-              if (pct >= 100) {
-                clearInterval(intervalRef.current);
-                onComplete(contentId, videoPoints);
-              }
-            }, 1500);
+            }, 1000);
           } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
@@ -100,6 +120,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
     });
     return () => { clearInterval(intervalRef.current); playerRef.current?.destroy?.(); };
   }, [ytReady, videoId, contentId, isCompleted]);
+
 
   // Anti-cheat: disable right-click on video area
   const handleContextMenu = (e: React.MouseEvent) => {
