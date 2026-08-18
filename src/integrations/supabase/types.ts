@@ -571,16 +571,19 @@ export type Database = {
       user_roles: {
         Row: {
           id: string
+          is_active: boolean
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           id?: string
+          is_active?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           id?: string
+          is_active?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -635,6 +638,54 @@ export type Database = {
           created_at?: string
           id?: string
           student_id?: string
+          volunteer_id?: string
+        }
+        Relationships: []
+      }
+      volunteer_reports: {
+        Row: {
+          behaviour: string | null
+          created_at: string
+          has_problem: boolean
+          id: string
+          notes: string | null
+          present: boolean
+          problem: string | null
+          progress: string | null
+          rating: number
+          report_date: string
+          student_id: string
+          updated_at: string
+          volunteer_id: string
+        }
+        Insert: {
+          behaviour?: string | null
+          created_at?: string
+          has_problem?: boolean
+          id?: string
+          notes?: string | null
+          present?: boolean
+          problem?: string | null
+          progress?: string | null
+          rating?: number
+          report_date?: string
+          student_id: string
+          updated_at?: string
+          volunteer_id: string
+        }
+        Update: {
+          behaviour?: string | null
+          created_at?: string
+          has_problem?: boolean
+          id?: string
+          notes?: string | null
+          present?: boolean
+          problem?: string | null
+          progress?: string | null
+          rating?: number
+          report_date?: string
+          student_id?: string
+          updated_at?: string
           volunteer_id?: string
         }
         Relationships: []
