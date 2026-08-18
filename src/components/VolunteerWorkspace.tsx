@@ -6,36 +6,86 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { AlertTriangle, MessageSquare, UserCheck, Users, Clock, Star, Trash2, Send } from 'lucide-react';
+import { AlertTriangle, MessageSquare, UserCheck, Users, Clock, Star, Trash2, Send, ClipboardList, CheckCircle2, XCircle } from 'lucide-react';
 
 type Person = { user_id: string; full_name: string | null; email?: string | null; phone?: string | null };
 
+type VolunteerReport = {
+  id: string;
+  volunteer_id: string;
+  student_id: string;
+  report_date: string;
+  present: boolean;
+  rating: number;
+  progress: string | null;
+  behaviour: string | null;
+  problem: string | null;
+  has_problem: boolean;
+  notes: string | null;
+  created_at: string;
+};
+
 const INACTIVE_DAYS = 14;
+const ALL = '__all__';
+
+const emptyDraft = {
+  present: true,
+  rating: '3',
+  progress: '',
+  behaviour: '',
+  problem: '',
+  notes: '',
+  report_date: new Date().toISOString().slice(0, 10),
+};
 
 export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: boolean }) {
   const { user } = useAuth();
 
   const [volunteers, setVolunteers] = useState<Person[]>([]);
+  const [volunteerRoles, setVolunteerRoles] = useState<any[]>([]);
   const [students, setStudents] = useState<Person[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
   const [progress, setProgress] = useState<any[]>([]);
+  const [vReports, setVReports] = useState<VolunteerReport[]>([]);
 
   const [selectedVolunteer, setSelectedVolunteer] = useState<string>('');
   const [studentSearch, setStudentSearch] = useState('');
   const [answerDraft, setAnswerDraft] = useState<Record<string, string>>({});
+
+  // report form
+  const [reportStudent, setReportStudent] = useState<string>('');
+  const [draft, setDraft] = useState({ ...emptyDraft });
+  const [saving, setSaving] = useState(false);
+
+  // admin report filters
+  const [fVolunteer, setFVolunteer] = useState(ALL);
+  const [fStudent, setFStudent] = useState(ALL);
+  const [fPresence, setFPresence] = useState(ALL);
+  const [fRating, setFRating] = useState(ALL);
+  const [fProblem, setFProblem] = useState(ALL);
+  const [fFrom, setFFrom] = useState('');
+  const [fTo, setFTo] = useState('');
+
+  // messaging
+  const [msgTarget, setMsgTarget] = useState('');
+  const [msgTitle, setMsgTitle] = useState('');
+  const [msgBody, setMsgBody] = useState('');
 
   const load = useCallback(async () => {
     if (!user) return;
 
     const profileTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
 
-    const [assignRes, questionsRes, reportsRes, feedbackRes, profilesRes, progressRes] = await Promise.all([
+    const [assignRes, questionsRes, reportsRes, feedbackRes, profilesRes, progressRes, vReportsRes] = await Promise.all([
       hasFullAccess
         ? supabase.from('volunteer_assignments').select('*')
         : supabase.from('volunteer_assignments').select('*').eq('volunteer_id', user.id),
@@ -44,6 +94,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
       supabase.from('student_feedback').select('*').order('created_at', { ascending: false }),
       supabase.from(profileTable as any).select('user_id, full_name'),
       supabase.from('user_progress').select('user_id, completed, completed_at'),
+      supabase.from('volunteer_reports' as any).select('*').order('report_date', { ascending: false }).limit(500),
     ]);
 
     setAssignments(assignRes.data || []);
@@ -52,13 +103,14 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     setFeedback(feedbackRes.data || []);
     setStudents(((profilesRes.data as any[]) || []) as Person[]);
     setProgress(progressRes.data || []);
+    setVReports(((vReportsRes.data as any[]) || []) as VolunteerReport[]);
 
     if (hasFullAccess) {
-      const { data: roles } = await supabase.from('user_roles').select('user_id, role').eq('role', 'volunteer' as any);
-      const ids = (roles || []).map(r => r.user_id);
+      const { data: roles } = await supabase.from('user_roles').select('*').eq('role', 'volunteer' as any);
+      setVolunteerRoles(roles || []);
+      const ids = (roles || []).map((r: any) => r.user_id);
       const list = ((profilesRes.data as any[]) || []).filter(p => ids.includes(p.user_id));
-      // volunteers may not exist in the student profile list — fall back to raw ids
-      const missing = ids.filter(id => !list.some(p => p.user_id === id)).map(id => ({ user_id: id, full_name: null }));
+      const missing = ids.filter((id: string) => !list.some(p => p.user_id === id)).map((id: string) => ({ user_id: id, full_name: null }));
       setVolunteers([...list, ...missing] as Person[]);
     }
   }, [user, hasFullAccess]);
@@ -94,12 +146,39 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   const openQuestions = questions.filter(q => scope(q.student_id) && q.status === 'open');
   const openReports = reports.filter(r => scope(r.student_id) && r.status === 'open');
   const newFeedback = feedback.filter(f => scope(f.student_id) && !f.reviewed);
-  const pendingTasks = openQuestions.length + openReports.length + newFeedback.length + inactiveStudents.length;
 
   const nameOf = (id: string) => students.find(s => s.user_id === id)?.full_name || 'Student';
+  const volunteerName = (id: string) => volunteers.find(v => v.user_id === id)?.full_name || id.slice(0, 8);
+
+  // ---- dashboard metrics (based on today's / latest report per student) ----
+  const scopedReports = useMemo(
+    () => vReports.filter(r => (hasFullAccess ? true : r.volunteer_id === user?.id)),
+    [vReports, hasFullAccess, user],
+  );
+
+  const latestByStudent = useMemo(() => {
+    const map = new Map<string, VolunteerReport>();
+    for (const r of scopedReports) {
+      const cur = map.get(r.student_id);
+      if (!cur || r.report_date > cur.report_date) map.set(r.student_id, r);
+    }
+    return map;
+  }, [scopedReports]);
+
+  const presentCount = [...latestByStudent.values()].filter(r => r.present).length;
+  const absentCount = [...latestByStudent.values()].filter(r => !r.present).length;
+  const problemCount = [...latestByStudent.values()].filter(r => r.has_problem).length;
+  const avgRating = latestByStudent.size
+    ? ([...latestByStudent.values()].reduce((a, r) => a + (r.rating || 0), 0) / latestByStudent.size).toFixed(1)
+    : '—';
+  const today = new Date().toISOString().slice(0, 10);
+  const reportedToday = new Set(scopedReports.filter(r => r.report_date === today).map(r => r.student_id));
+  const pendingReports = myStudents.filter(s => !reportedToday.has(s.user_id)).length;
 
   async function assignStudent(studentId: string) {
     if (!selectedVolunteer) { toast.error('Select a volunteer first'); return; }
+    const count = assignments.filter(a => a.volunteer_id === selectedVolunteer).length;
+    if (count >= 100) { toast.error('A volunteer can have at most 100 students'); return; }
     const { error } = await supabase.from('volunteer_assignments').insert({
       volunteer_id: selectedVolunteer, student_id: studentId, assigned_by: user?.id,
     });
@@ -112,6 +191,55 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     const { error } = await supabase.from('volunteer_assignments').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     void load();
+  }
+
+  async function reassign(assignmentId: string, newVolunteerId: string) {
+    const { error } = await supabase.from('volunteer_assignments').update({ volunteer_id: newVolunteerId, assigned_by: user?.id }).eq('id', assignmentId);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Student reassigned');
+    void load();
+  }
+
+  async function toggleVolunteerActive(volunteerId: string, active: boolean) {
+    const row = volunteerRoles.find(r => r.user_id === volunteerId);
+    if (!row) return;
+    const { error } = await supabase.from('user_roles').update({ is_active: active } as any).eq('id', row.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(active ? 'Volunteer activated' : 'Volunteer deactivated');
+    void load();
+  }
+
+  async function submitReport() {
+    if (!reportStudent) { toast.error('Select a student'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('volunteer_reports' as any).insert({
+      volunteer_id: user?.id,
+      student_id: reportStudent,
+      report_date: draft.report_date,
+      present: draft.present,
+      rating: Number(draft.rating),
+      progress: draft.progress || null,
+      behaviour: draft.behaviour || null,
+      problem: draft.problem || null,
+      has_problem: !!draft.problem.trim(),
+      notes: draft.notes || null,
+    } as any);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Report submitted');
+    setDraft({ ...emptyDraft });
+    setReportStudent('');
+    void load();
+  }
+
+  async function sendMessage() {
+    if (!msgTarget || !msgTitle.trim()) { toast.error('Pick a recipient and write a title'); return; }
+    const { error } = await supabase.from('notifications').insert({
+      user_id: msgTarget, type: 'message', title: msgTitle.trim(), message: msgBody.trim() || null, link: '/',
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success('Message sent');
+    setMsgTitle(''); setMsgBody('');
   }
 
   async function answerQuestion(q: any) {
@@ -145,11 +273,28 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     void load();
   }
 
+  async function deleteVolunteerReport(id: string) {
+    const { error } = await supabase.from('volunteer_reports' as any).delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    void load();
+  }
+
   const assignedIdsForSelected = new Set(
     assignments.filter(a => a.volunteer_id === selectedVolunteer).map(a => a.student_id),
   );
 
-  const stat = (label: string, value: number, Icon: any) => (
+  const filteredVReports = useMemo(() => vReports.filter(r => {
+    if (fVolunteer !== ALL && r.volunteer_id !== fVolunteer) return false;
+    if (fStudent !== ALL && r.student_id !== fStudent) return false;
+    if (fPresence !== ALL && String(r.present) !== fPresence) return false;
+    if (fRating !== ALL && String(r.rating) !== fRating) return false;
+    if (fProblem !== ALL && String(r.has_problem) !== fProblem) return false;
+    if (fFrom && r.report_date < fFrom) return false;
+    if (fTo && r.report_date > fTo) return false;
+    return true;
+  }), [vReports, fVolunteer, fStudent, fPresence, fRating, fProblem, fFrom, fTo]);
+
+  const stat = (label: string, value: number | string, Icon: any) => (
     <Card className="glass-card">
       <CardContent className="p-4 text-center">
         <Icon className="h-4 w-4 mx-auto mb-1 text-primary" />
@@ -161,26 +306,59 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {stat('Students', myStudents.length, Users)}
-        {stat('Questions', openQuestions.length, MessageSquare)}
-        {stat('Reports', openReports.length, AlertTriangle)}
-        {stat('Inactive', inactiveStudents.length, Clock)}
-        {stat('Pending Tasks', pendingTasks, UserCheck)}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        {stat('Assigned Students', myStudents.length, Users)}
+        {stat('Present', presentCount, CheckCircle2)}
+        {stat('Absent', absentCount, XCircle)}
+        {stat('With Problems', problemCount, AlertTriangle)}
+        {stat('Avg Rating', avgRating, Star)}
+        {stat('Pending Reports', pendingReports, ClipboardList)}
       </div>
 
       <Tabs defaultValue={hasFullAccess ? 'assign' : 'students'}>
         <TabsList className="flex flex-wrap h-auto">
-          {hasFullAccess && <TabsTrigger value="assign">Assign</TabsTrigger>}
+          {hasFullAccess && <TabsTrigger value="assign">Volunteers</TabsTrigger>}
           <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="submit">{hasFullAccess ? 'All Reports' : 'Submit Report'}</TabsTrigger>
           <TabsTrigger value="questions">Questions</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="reports">Issues</TabsTrigger>
           <TabsTrigger value="inactive">Inactive</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="message">Message</TabsTrigger>
         </TabsList>
 
         {hasFullAccess && (
           <TabsContent value="assign" className="space-y-3 pt-3">
+            <Card className="glass-card">
+              <CardHeader className="pb-2"><CardTitle className="text-base">Volunteers</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {volunteers.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No volunteers yet — add one from the Staff tab.</p>
+                )}
+                {volunteers.map(v => {
+                  const role = volunteerRoles.find(r => r.user_id === v.user_id);
+                  const active = role?.is_active !== false;
+                  const count = assignments.filter(a => a.volunteer_id === v.user_id).length;
+                  return (
+                    <div key={v.user_id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-border/60 flex-wrap">
+                      <div>
+                        <p className="text-sm font-medium">{v.full_name || v.user_id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{count} student(s) assigned</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {!active && <Badge variant="destructive">Inactive</Badge>}
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs">Active</Label>
+                          <Switch checked={active} onCheckedChange={c => toggleVolunteerActive(v.user_id, c)} />
+                        </div>
+                        <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => setSelectedVolunteer(v.user_id)}>Manage students</Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
             <Card className="glass-card">
               <CardHeader className="pb-2"><CardTitle className="text-base">Assign students to a volunteer</CardTitle></CardHeader>
               <CardContent className="space-y-3">
@@ -192,9 +370,6 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                     ))}
                   </SelectContent>
                 </Select>
-                {volunteers.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No volunteers yet — add one from the Staff tab.</p>
-                )}
 
                 {selectedVolunteer && (
                   <>
@@ -204,21 +379,30 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                         .filter(s => (s.full_name || '').toLowerCase().includes(studentSearch.toLowerCase()))
                         .map(s => {
                           const assigned = assignments.find(a => a.volunteer_id === selectedVolunteer && a.student_id === s.user_id);
+                          const other = assignments.find(a => a.student_id === s.user_id && a.volunteer_id !== selectedVolunteer);
                           return (
                             <div key={s.user_id} className="flex items-center justify-between gap-2 p-2.5">
-                              <span className="text-sm truncate">{s.full_name || s.user_id.slice(0, 8)}</span>
-                              {assigned ? (
-                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => unassign(assigned.id)}>
-                                  <Trash2 className="h-3.5 w-3.5 mr-1" />Remove
-                                </Button>
-                              ) : (
-                                <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => assignStudent(s.user_id)}>Assign</Button>
-                              )}
+                              <span className="text-sm truncate">
+                                {s.full_name || s.user_id.slice(0, 8)}
+                                {other && <span className="text-xs text-muted-foreground"> · with {volunteerName(other.volunteer_id)}</span>}
+                              </span>
+                              <div className="flex gap-1">
+                                {other && (
+                                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => reassign(other.id, selectedVolunteer)}>Reassign here</Button>
+                                )}
+                                {assigned ? (
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => unassign(assigned.id)}>
+                                    <Trash2 className="h-3.5 w-3.5 mr-1" />Remove
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => assignStudent(s.user_id)}>Assign</Button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
                     </div>
-                    <p className="text-xs text-muted-foreground">{assignedIdsForSelected.size} student(s) assigned to this volunteer.</p>
+                    <p className="text-xs text-muted-foreground">{assignedIdsForSelected.size} student(s) assigned to this volunteer (max 100).</p>
                   </>
                 )}
               </CardContent>
@@ -231,6 +415,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
           {myStudents.map(s => {
             const last = lastActivity(s.user_id);
             const done = progress.filter(p => p.user_id === s.user_id && p.completed).length;
+            const latest = latestByStudent.get(s.user_id);
             return (
               <Card key={s.user_id} className="glass-card">
                 <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
@@ -238,13 +423,123 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                     <p className="text-sm font-medium">{s.full_name || 'Student'}</p>
                     <p className="text-xs text-muted-foreground">
                       {done} lesson(s) completed · last activity {last ? new Date(last).toLocaleDateString() : 'never'}
+                      {latest && ` · last report ${latest.report_date} (${latest.present ? 'present' : 'absent'}, ${latest.rating}/5)`}
                     </p>
                   </div>
-                  {(!last || Date.now() - last > INACTIVE_DAYS * 86400000) && <Badge variant="destructive">Inactive</Badge>}
+                  <div className="flex items-center gap-2">
+                    {(!last || Date.now() - last > INACTIVE_DAYS * 86400000) && <Badge variant="destructive">Inactive</Badge>}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => { setReportStudent(s.user_id); setDraft({ ...emptyDraft }); }}>
+                          <ClipboardList className="h-3.5 w-3.5 mr-1" />Report
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader><DialogTitle>Report — {s.full_name || 'Student'}</DialogTitle></DialogHeader>
+                        <ReportForm draft={draft} setDraft={setDraft} onSubmit={submitReport} saving={saving} />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
+        </TabsContent>
+
+        <TabsContent value="submit" className="space-y-3 pt-3">
+          {!hasFullAccess && (
+            <Card className="glass-card">
+              <CardHeader className="pb-2"><CardTitle className="text-base">Submit a student report</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Select value={reportStudent} onValueChange={setReportStudent}>
+                  <SelectTrigger className="max-w-sm"><SelectValue placeholder="Select student" /></SelectTrigger>
+                  <SelectContent>
+                    {myStudents.map(s => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || s.user_id.slice(0, 8)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <ReportForm draft={draft} setDraft={setDraft} onSubmit={submitReport} saving={saving} />
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="glass-card">
+            <CardHeader className="pb-2"><CardTitle className="text-base">{hasFullAccess ? 'Volunteer reports' : 'My submitted reports'}</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {hasFullAccess && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Select value={fVolunteer} onValueChange={setFVolunteer}>
+                    <SelectTrigger><SelectValue placeholder="Volunteer" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>All volunteers</SelectItem>
+                      {volunteers.map(v => <SelectItem key={v.user_id} value={v.user_id}>{v.full_name || v.user_id.slice(0, 8)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={fStudent} onValueChange={setFStudent}>
+                    <SelectTrigger><SelectValue placeholder="Student" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>All students</SelectItem>
+                      {students.map(s => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || s.user_id.slice(0, 8)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={fPresence} onValueChange={setFPresence}>
+                    <SelectTrigger><SelectValue placeholder="Attendance" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>Present & absent</SelectItem>
+                      <SelectItem value="true">Present</SelectItem>
+                      <SelectItem value="false">Absent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={fRating} onValueChange={setFRating}>
+                    <SelectTrigger><SelectValue placeholder="Rating" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>Any rating</SelectItem>
+                      {[1, 2, 3, 4, 5].map(n => <SelectItem key={n} value={String(n)}>{n} star{n > 1 ? 's' : ''}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={fProblem} onValueChange={setFProblem}>
+                    <SelectTrigger><SelectValue placeholder="Problem" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>With & without problems</SelectItem>
+                      <SelectItem value="true">Has problem</SelectItem>
+                      <SelectItem value="false">No problem</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input type="date" value={fFrom} onChange={e => setFFrom(e.target.value)} />
+                  <Input type="date" value={fTo} onChange={e => setFTo(e.target.value)} />
+                  <Button variant="outline" onClick={() => { setFVolunteer(ALL); setFStudent(ALL); setFPresence(ALL); setFRating(ALL); setFProblem(ALL); setFFrom(''); setFTo(''); }}>Clear filters</Button>
+                </div>
+              )}
+
+              {(hasFullAccess ? filteredVReports : scopedReports).length === 0 && (
+                <p className="text-sm text-muted-foreground">No reports yet.</p>
+              )}
+              {(hasFullAccess ? filteredVReports : scopedReports).map(r => (
+                <div key={r.id} className="rounded-lg border border-border/60 p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-sm font-medium">
+                      {nameOf(r.student_id)}
+                      {hasFullAccess && <span className="text-xs text-muted-foreground"> · by {volunteerName(r.volunteer_id)}</span>}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Badge variant={r.present ? 'secondary' : 'destructive'}>{r.present ? 'Present' : 'Absent'}</Badge>
+                      <Badge variant="outline">{r.rating}/5</Badge>
+                      {r.has_problem && <Badge variant="destructive">Problem</Badge>}
+                      <span className="text-xs text-muted-foreground">{r.report_date}</span>
+                    </div>
+                  </div>
+                  {r.progress && <p className="text-xs"><span className="text-muted-foreground">Progress: </span>{r.progress}</p>}
+                  {r.behaviour && <p className="text-xs"><span className="text-muted-foreground">Behaviour: </span>{r.behaviour}</p>}
+                  {r.problem && <p className="text-xs"><span className="text-muted-foreground">Problem: </span>{r.problem}</p>}
+                  {r.notes && <p className="text-xs"><span className="text-muted-foreground">Notes: </span>{r.notes}</p>}
+                  {hasFullAccess && (
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => deleteVolunteerReport(r.id)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="questions" className="space-y-2 pt-3">
@@ -328,7 +623,66 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
             </Card>
           ))}
         </TabsContent>
+
+        <TabsContent value="message" className="pt-3">
+          <Card className="glass-card">
+            <CardHeader className="pb-2"><CardTitle className="text-base">Send a notification</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Select value={msgTarget} onValueChange={setMsgTarget}>
+                <SelectTrigger className="max-w-sm"><SelectValue placeholder="Select recipient" /></SelectTrigger>
+                <SelectContent>
+                  {(hasFullAccess ? [...volunteers, ...students] : myStudents).map(p => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.user_id.slice(0, 8)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input placeholder="Title" value={msgTitle} onChange={e => setMsgTitle(e.target.value)} className="max-w-sm" />
+              <Textarea rows={3} placeholder="Message" value={msgBody} onChange={e => setMsgBody(e.target.value)} />
+              <Button onClick={sendMessage}><Send className="h-4 w-4 mr-1" />Send</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ReportForm({ draft, setDraft, onSubmit, saving }: {
+  draft: typeof emptyDraft;
+  setDraft: (d: typeof emptyDraft) => void;
+  onSubmit: () => void;
+  saving: boolean;
+}) {
+  const set = (patch: Partial<typeof emptyDraft>) => setDraft({ ...draft, ...patch });
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Present</Label>
+          <Switch checked={draft.present} onCheckedChange={c => set({ present: c })} />
+          <span className="text-xs text-muted-foreground">{draft.present ? 'Present' : 'Absent'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Rating</Label>
+          <Select value={draft.rating} onValueChange={v => set({ rating: v })}>
+            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4, 5].map(n => <SelectItem key={n} value={String(n)}>{'★'.repeat(n)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Date</Label>
+          <Input type="date" className="w-40" value={draft.report_date} onChange={e => set({ report_date: e.target.value })} />
+        </div>
+      </div>
+      <Textarea rows={2} placeholder="Student progress" value={draft.progress} onChange={e => set({ progress: e.target.value })} />
+      <Textarea rows={2} placeholder="Behaviour / participation" value={draft.behaviour} onChange={e => set({ behaviour: e.target.value })} />
+      <Textarea rows={2} placeholder="Problems or difficulties (leave empty if none)" value={draft.problem} onChange={e => set({ problem: e.target.value })} />
+      <Textarea rows={2} placeholder="Additional notes" value={draft.notes} onChange={e => set({ notes: e.target.value })} />
+      <Button onClick={onSubmit} disabled={saving} className="gradient-primary text-primary-foreground">
+        {saving ? 'Submitting…' : 'Submit Report'}
+      </Button>
     </div>
   );
 }
