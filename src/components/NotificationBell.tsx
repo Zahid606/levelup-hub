@@ -35,6 +35,34 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const seenRef = useRef<Set<string> | null>(null);
+
+  // Ask once for OS-level notification permission (works on Android/desktop
+  // even when the tab is in the background or the screen is locked).
+  useEffect(() => {
+    if (!user || typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      const ask = () => { void Notification.requestPermission(); window.removeEventListener('pointerdown', ask); };
+      window.addEventListener('pointerdown', ask, { once: true });
+      return () => window.removeEventListener('pointerdown', ask);
+    }
+  }, [user]);
+
+  const pushToOS = useCallback((list: Notification[]) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    const unseen = list.filter(n => !n.read_at && !seenRef.current?.has(n.id));
+    for (const n of unseen.slice(0, 3)) {
+      try {
+        const sys = new Notification(n.title, { body: n.message || '', tag: n.id, icon: '/favicon.svg' });
+        sys.onclick = () => {
+          window.focus();
+          navigate(n.link || (n.lesson_id ? `/lesson/${n.lesson_id}` : '/'));
+          sys.close();
+        };
+      } catch { /* ignore unsupported browsers */ }
+    }
+  }, [navigate]);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -44,10 +72,18 @@ export function NotificationBell() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30);
-    setItems((data as Notification[]) || []);
-  }, [user]);
+    const list = (data as Notification[]) || [];
+    if (seenRef.current === null) {
+      seenRef.current = new Set(list.map(n => n.id)); // don't re-announce on first load
+    } else {
+      pushToOS(list);
+      list.forEach(n => seenRef.current?.add(n.id));
+    }
+    setItems(list);
+  }, [user, pushToOS]);
 
   useEffect(() => { void load(); }, [load]);
+
 
   // Live updates without refreshing
   useEffect(() => {
