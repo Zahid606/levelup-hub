@@ -382,19 +382,26 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                   </SelectContent>
                 </Select>
 
+                {!selectedVolunteer && (
+                  <p className="text-sm text-muted-foreground">Select a volunteer above to see the list of registered students.</p>
+                )}
+
                 {selectedVolunteer && (
                   <>
-                    <Input placeholder="Search students…" value={studentSearch} onChange={e => setStudentSearch(e.target.value)} className="max-w-sm" />
+                    <Input placeholder="Search students by name or email…" value={studentSearch} onChange={e => setStudentSearch(e.target.value)} className="max-w-sm" />
                     <div className="max-h-80 overflow-y-auto divide-y divide-border/60 rounded-lg border border-border/60">
-                      {students
-                        .filter(s => (s.full_name || '').toLowerCase().includes(studentSearch.toLowerCase()))
+                      {assignableStudents.length === 0 && (
+                        <p className="p-3 text-sm text-muted-foreground">No registered students found.</p>
+                      )}
+                      {assignableStudents
                         .map(s => {
                           const assigned = assignments.find(a => a.volunteer_id === selectedVolunteer && a.student_id === s.user_id);
                           const other = assignments.find(a => a.student_id === s.user_id && a.volunteer_id !== selectedVolunteer);
                           return (
                             <div key={s.user_id} className="flex items-center justify-between gap-2 p-2.5">
                               <span className="text-sm truncate">
-                                {s.full_name || s.user_id.slice(0, 8)}
+                                {s.full_name || (s as any).email || s.user_id.slice(0, 8)}
+                                {(s as any).email && s.full_name && <span className="text-xs text-muted-foreground"> · {(s as any).email}</span>}
                                 {other && <span className="text-xs text-muted-foreground"> · with {volunteerName(other.volunteer_id)}</span>}
                               </span>
                               <div className="flex gap-1">
@@ -416,6 +423,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                     <p className="text-xs text-muted-foreground">{assignedIdsForSelected.size} student(s) assigned to this volunteer (max 100).</p>
                   </>
                 )}
+
               </CardContent>
             </Card>
           </TabsContent>
