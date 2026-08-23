@@ -50,6 +50,8 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   const [volunteers, setVolunteers] = useState<Person[]>([]);
   const [volunteerRoles, setVolunteerRoles] = useState<any[]>([]);
   const [students, setStudents] = useState<Person[]>([]);
+  const [studentIds, setStudentIds] = useState<Set<string>>(new Set());
+
   const [assignments, setAssignments] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
