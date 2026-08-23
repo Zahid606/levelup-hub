@@ -201,9 +201,18 @@ export default function LessonDetail() {
   }
 
   const getYoutubeId = (url: string) => {
-    const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
-    return match?.[1] || '';
+    if (!url) return '';
+    const clean = url.trim();
+    // Supports: watch?v=, youtu.be/, /embed/, /v/, /live/, /shorts/
+    const match = clean.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|live\/|shorts\/|watch\?v=|watch\?.+&v=))([A-Za-z0-9_-]{6,})/,
+    );
+    if (match?.[1]) return match[1];
+    // Bare video id pasted directly
+    if (/^[A-Za-z0-9_-]{11}$/.test(clean)) return clean;
+    return '';
   };
+
 
   const handleVideoComplete = useCallback(async (contentId: string, points: number) => {
     if (!user || completedVideos.has(contentId)) return;
