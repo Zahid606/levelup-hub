@@ -76,8 +76,10 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
         modestbranding: 1,
         disablekb: 1,           // Disable keyboard controls (no arrow key skip)
         iv_load_policy: 3,      // Disable annotations
+        playsinline: 1,         // Keep inline playback on iOS so tracking keeps working
         fs: 1,
       },
+
       events: {
         onStateChange: (e: any) => {
           if (e.data === window.YT.PlayerState.ENDED) {
