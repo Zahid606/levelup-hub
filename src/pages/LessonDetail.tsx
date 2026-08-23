@@ -346,16 +346,27 @@ export default function LessonDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {c.youtube_url && (
-                    <VideoPlayer
-                      videoId={getYoutubeId(c.youtube_url)}
-                      contentId={c.id}
-                      videoPoints={(c as any).video_points || 10}
-                      onComplete={handleVideoComplete}
-                      isCompleted={completedVideos.has(c.id)}
-                    />
-                  )}
+                  {(() => {
+                    const vid = getYoutubeId(c.youtube_url || '');
+                    if (!vid) {
+                      return (
+                        <p className="text-sm text-muted-foreground">
+                          This video link is not valid yet. Please contact your supervisor.
+                        </p>
+                      );
+                    }
+                    return (
+                      <VideoPlayer
+                        videoId={vid}
+                        contentId={c.id}
+                        videoPoints={(c as any).video_points || 10}
+                        onComplete={handleVideoComplete}
+                        isCompleted={completedVideos.has(c.id)}
+                      />
+                    );
+                  })()}
                 </CardContent>
+
               </Card>
             ))}
           </div>
