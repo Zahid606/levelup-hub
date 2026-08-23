@@ -187,13 +187,16 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     if (!selectedVolunteer) { toast.error('Select a volunteer first'); return; }
     const count = assignments.filter(a => a.volunteer_id === selectedVolunteer).length;
     if (count >= 100) { toast.error('A volunteer can have at most 100 students'); return; }
-    const { error } = await supabase.from('volunteer_assignments').insert({
+    const { data, error } = await supabase.from('volunteer_assignments').insert({
       volunteer_id: selectedVolunteer, student_id: studentId, assigned_by: user?.id,
-    });
+    }).select().single();
     if (error) { toast.error(error.message); return; }
+    // Show it right away, then refresh from the server.
+    if (data) setAssignments(prev => [...prev.filter(a => a.id !== (data as any).id), data]);
     toast.success('Student assigned');
     void load();
   }
+
 
   async function unassign(id: string) {
     const { error } = await supabase.from('volunteer_assignments').delete().eq('id', id);
