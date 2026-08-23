@@ -84,6 +84,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     if (!user) return;
 
     const profileTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
+    const profileCols = hasFullAccess ? 'user_id, full_name, email' : 'user_id, full_name';
 
     const [assignRes, questionsRes, reportsRes, feedbackRes, profilesRes, progressRes, vReportsRes] = await Promise.all([
       hasFullAccess
@@ -92,10 +93,12 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
       supabase.from('student_questions').select('*').order('created_at', { ascending: false }),
       supabase.from('student_reports').select('*').order('created_at', { ascending: false }),
       supabase.from('student_feedback').select('*').order('created_at', { ascending: false }),
-      supabase.from(profileTable as any).select('user_id, full_name'),
+      supabase.from(profileTable as any).select(profileCols),
       supabase.from('user_progress').select('user_id, completed, completed_at'),
       supabase.from('volunteer_reports' as any).select('*').order('report_date', { ascending: false }).limit(500),
     ]);
+
+    if (profilesRes.error) toast.error(`Could not load students: ${profilesRes.error.message}`);
 
     setAssignments(assignRes.data || []);
     setQuestions(questionsRes.data || []);
@@ -106,14 +109,17 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     setVReports(((vReportsRes.data as any[]) || []) as VolunteerReport[]);
 
     if (hasFullAccess) {
-      const { data: roles } = await supabase.from('user_roles').select('*').eq('role', 'volunteer' as any);
-      setVolunteerRoles(roles || []);
-      const ids = (roles || []).map((r: any) => r.user_id);
+      const { data: roles } = await supabase.from('user_roles').select('*');
+      const volunteerRows = (roles || []).filter((r: any) => r.role === 'volunteer');
+      setVolunteerRoles(volunteerRows);
+      setStudentIds(new Set((roles || []).filter((r: any) => r.role === 'student').map((r: any) => r.user_id)));
+      const ids = volunteerRows.map((r: any) => r.user_id);
       const list = ((profilesRes.data as any[]) || []).filter(p => ids.includes(p.user_id));
       const missing = ids.filter((id: string) => !list.some(p => p.user_id === id)).map((id: string) => ({ user_id: id, full_name: null }));
       setVolunteers([...list, ...missing] as Person[]);
     }
   }, [user, hasFullAccess]);
+
 
   useEffect(() => { void load(); }, [load]);
 
