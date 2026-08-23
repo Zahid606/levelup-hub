@@ -76,8 +76,10 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
         modestbranding: 1,
         disablekb: 1,           // Disable keyboard controls (no arrow key skip)
         iv_load_policy: 3,      // Disable annotations
+        playsinline: 1,         // Keep inline playback on iOS so tracking keeps working
         fs: 1,
       },
+
       events: {
         onStateChange: (e: any) => {
           if (e.data === window.YT.PlayerState.ENDED) {
@@ -201,9 +203,18 @@ export default function LessonDetail() {
   }
 
   const getYoutubeId = (url: string) => {
-    const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&\n?#]+)/);
-    return match?.[1] || '';
+    if (!url) return '';
+    const clean = url.trim();
+    // Supports: watch?v=, youtu.be/, /embed/, /v/, /live/, /shorts/
+    const match = clean.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|live\/|shorts\/|watch\?v=|watch\?.+&v=))([A-Za-z0-9_-]{6,})/,
+    );
+    if (match?.[1]) return match[1];
+    // Bare video id pasted directly
+    if (/^[A-Za-z0-9_-]{11}$/.test(clean)) return clean;
+    return '';
   };
+
 
   const handleVideoComplete = useCallback(async (contentId: string, points: number) => {
     if (!user || completedVideos.has(contentId)) return;
@@ -337,16 +348,27 @@ export default function LessonDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {c.youtube_url && (
-                    <VideoPlayer
-                      videoId={getYoutubeId(c.youtube_url)}
-                      contentId={c.id}
-                      videoPoints={(c as any).video_points || 10}
-                      onComplete={handleVideoComplete}
-                      isCompleted={completedVideos.has(c.id)}
-                    />
-                  )}
+                  {(() => {
+                    const vid = getYoutubeId(c.youtube_url || '');
+                    if (!vid) {
+                      return (
+                        <p className="text-sm text-muted-foreground">
+                          This video link is not valid yet. Please contact your supervisor.
+                        </p>
+                      );
+                    }
+                    return (
+                      <VideoPlayer
+                        videoId={vid}
+                        contentId={c.id}
+                        videoPoints={(c as any).video_points || 10}
+                        onComplete={handleVideoComplete}
+                        isCompleted={completedVideos.has(c.id)}
+                      />
+                    );
+                  })()}
                 </CardContent>
+
               </Card>
             ))}
           </div>

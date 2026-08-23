@@ -50,6 +50,8 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   const [volunteers, setVolunteers] = useState<Person[]>([]);
   const [volunteerRoles, setVolunteerRoles] = useState<any[]>([]);
   const [students, setStudents] = useState<Person[]>([]);
+  const [studentIds, setStudentIds] = useState<Set<string>>(new Set());
+
   const [assignments, setAssignments] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
@@ -84,6 +86,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     if (!user) return;
 
     const profileTable = hasFullAccess ? 'profiles' : 'student_basic_profiles';
+    const profileCols = hasFullAccess ? 'user_id, full_name, email' : 'user_id, full_name';
 
     const [assignRes, questionsRes, reportsRes, feedbackRes, profilesRes, progressRes, vReportsRes] = await Promise.all([
       hasFullAccess
@@ -92,10 +95,12 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
       supabase.from('student_questions').select('*').order('created_at', { ascending: false }),
       supabase.from('student_reports').select('*').order('created_at', { ascending: false }),
       supabase.from('student_feedback').select('*').order('created_at', { ascending: false }),
-      supabase.from(profileTable as any).select('user_id, full_name'),
+      supabase.from(profileTable as any).select(profileCols),
       supabase.from('user_progress').select('user_id, completed, completed_at'),
       supabase.from('volunteer_reports' as any).select('*').order('report_date', { ascending: false }).limit(500),
     ]);
+
+    if (profilesRes.error) toast.error(`Could not load students: ${profilesRes.error.message}`);
 
     setAssignments(assignRes.data || []);
     setQuestions(questionsRes.data || []);
@@ -106,14 +111,17 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     setVReports(((vReportsRes.data as any[]) || []) as VolunteerReport[]);
 
     if (hasFullAccess) {
-      const { data: roles } = await supabase.from('user_roles').select('*').eq('role', 'volunteer' as any);
-      setVolunteerRoles(roles || []);
-      const ids = (roles || []).map((r: any) => r.user_id);
+      const { data: roles } = await supabase.from('user_roles').select('*');
+      const volunteerRows = (roles || []).filter((r: any) => r.role === 'volunteer');
+      setVolunteerRoles(volunteerRows);
+      setStudentIds(new Set((roles || []).filter((r: any) => r.role === 'student').map((r: any) => r.user_id)));
+      const ids = volunteerRows.map((r: any) => r.user_id);
       const list = ((profilesRes.data as any[]) || []).filter(p => ids.includes(p.user_id));
       const missing = ids.filter((id: string) => !list.some(p => p.user_id === id)).map((id: string) => ({ user_id: id, full_name: null }));
       setVolunteers([...list, ...missing] as Person[]);
     }
   }, [user, hasFullAccess]);
+
 
   useEffect(() => { void load(); }, [load]);
 
@@ -179,13 +187,16 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     if (!selectedVolunteer) { toast.error('Select a volunteer first'); return; }
     const count = assignments.filter(a => a.volunteer_id === selectedVolunteer).length;
     if (count >= 100) { toast.error('A volunteer can have at most 100 students'); return; }
-    const { error } = await supabase.from('volunteer_assignments').insert({
+    const { data, error } = await supabase.from('volunteer_assignments').insert({
       volunteer_id: selectedVolunteer, student_id: studentId, assigned_by: user?.id,
-    });
+    }).select().single();
     if (error) { toast.error(error.message); return; }
+    // Show it right away, then refresh from the server.
+    if (data) setAssignments(prev => [...prev.filter(a => a.id !== (data as any).id), data]);
     toast.success('Student assigned');
     void load();
   }
+
 
   async function unassign(id: string) {
     const { error } = await supabase.from('volunteer_assignments').delete().eq('id', id);
@@ -371,19 +382,26 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                   </SelectContent>
                 </Select>
 
+                {!selectedVolunteer && (
+                  <p className="text-sm text-muted-foreground">Select a volunteer above to see the list of registered students.</p>
+                )}
+
                 {selectedVolunteer && (
                   <>
-                    <Input placeholder="Search students…" value={studentSearch} onChange={e => setStudentSearch(e.target.value)} className="max-w-sm" />
+                    <Input placeholder="Search students by name or email…" value={studentSearch} onChange={e => setStudentSearch(e.target.value)} className="max-w-sm" />
                     <div className="max-h-80 overflow-y-auto divide-y divide-border/60 rounded-lg border border-border/60">
-                      {students
-                        .filter(s => (s.full_name || '').toLowerCase().includes(studentSearch.toLowerCase()))
+                      {assignableStudents.length === 0 && (
+                        <p className="p-3 text-sm text-muted-foreground">No registered students found.</p>
+                      )}
+                      {assignableStudents
                         .map(s => {
                           const assigned = assignments.find(a => a.volunteer_id === selectedVolunteer && a.student_id === s.user_id);
                           const other = assignments.find(a => a.student_id === s.user_id && a.volunteer_id !== selectedVolunteer);
                           return (
                             <div key={s.user_id} className="flex items-center justify-between gap-2 p-2.5">
                               <span className="text-sm truncate">
-                                {s.full_name || s.user_id.slice(0, 8)}
+                                {s.full_name || (s as any).email || s.user_id.slice(0, 8)}
+                                {(s as any).email && s.full_name && <span className="text-xs text-muted-foreground"> · {(s as any).email}</span>}
                                 {other && <span className="text-xs text-muted-foreground"> · with {volunteerName(other.volunteer_id)}</span>}
                               </span>
                               <div className="flex gap-1">
@@ -405,6 +423,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                     <p className="text-xs text-muted-foreground">{assignedIdsForSelected.size} student(s) assigned to this volunteer (max 100).</p>
                   </>
                 )}
+
               </CardContent>
             </Card>
           </TabsContent>
