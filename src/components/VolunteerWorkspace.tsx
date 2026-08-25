@@ -158,6 +158,19 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   const nameOf = (id: string) => students.find(s => s.user_id === id)?.full_name || 'Student';
   const volunteerName = (id: string) => volunteers.find(v => v.user_id === id)?.full_name || id.slice(0, 8);
 
+  const assignableStudents = useMemo(() => {
+    const query = studentSearch.trim().toLowerCase();
+
+    return students
+      .filter(student => studentIds.size === 0 || studentIds.has(student.user_id))
+      .filter(student => {
+        if (!query) return true;
+        const name = student.full_name?.toLowerCase() || '';
+        const email = student.email?.toLowerCase() || '';
+        return name.includes(query) || email.includes(query);
+      });
+  }, [students, studentIds, studentSearch]);
+
   // ---- dashboard metrics (based on today's / latest report per student) ----
   const scopedReports = useMemo(
     () => vReports.filter(r => (hasFullAccess ? true : r.volunteer_id === user?.id)),
