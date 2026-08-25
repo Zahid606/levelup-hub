@@ -731,6 +731,14 @@ export type Database = {
           total_points: number
         }[]
       }
+      get_message_contacts: {
+        Args: never
+        Returns: {
+          full_name: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_student_dashboard_summary: {
         Args: { _user_id: string }
         Returns: {
