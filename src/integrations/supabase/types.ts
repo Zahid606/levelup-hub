@@ -163,6 +163,33 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -702,6 +729,14 @@ export type Database = {
           student_count: number
           total_accounts: number
           total_points: number
+        }[]
+      }
+      get_message_contacts: {
+        Args: never
+        Returns: {
+          full_name: string
+          role: string
+          user_id: string
         }[]
       }
       get_student_dashboard_summary: {
