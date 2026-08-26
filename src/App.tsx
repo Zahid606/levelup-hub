@@ -11,6 +11,7 @@ const LessonDetail = lazy(() => import("./pages/LessonDetail"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Contact = lazy(() => import("./pages/Contact"));
+const Messages = lazy(() => import("./pages/Messages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
