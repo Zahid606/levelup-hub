@@ -90,6 +90,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
           }
           if (e.data === window.YT.PlayerState.PLAYING) {
             clearInterval(intervalRef.current);
+            // Poll often so a forward seek is corrected almost instantly.
             intervalRef.current = setInterval(() => {
               const p = playerRef.current;
               if (!p?.getCurrentTime || !p?.getDuration) return;
@@ -97,10 +98,14 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               const duration = p.getDuration();
               if (!duration) return;
 
-              // Anti-cheat: if user skipped forward beyond what they've watched, seek back
-              if (currentTime > maxReachedRef.current + 3) {
+              // Anti-cheat: if user skipped forward beyond what they've watched, seek back at once
+              if (currentTime > maxReachedRef.current + 1) {
                 p.seekTo(maxReachedRef.current, true);
-                toast.error('Skipping is not allowed! Watch the full video.');
+                const now = Date.now();
+                if (now - lastWarnRef.current > 2500) {
+                  lastWarnRef.current = now;
+                  toast.error('Skipping is not allowed! Watch the full video.');
+                }
                 return;
               }
               maxReachedRef.current = Math.max(maxReachedRef.current, currentTime);
@@ -111,7 +116,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               // 2 seconds (or 99%+) as fully watched so it never sticks at 99%.
               if (remaining <= 2 || pct >= 99) { finish(); return; }
               setWatchPercent(pct);
-            }, 1000);
+            }, 250);
           } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
