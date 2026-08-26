@@ -89,6 +89,19 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
             finish();
             return;
           }
+          // A drag on the progress bar shows up as a BUFFERING/PAUSED event —
+          // correct the position immediately so the jump is barely visible.
+          if (!completedRef.current && e.target?.getCurrentTime) {
+            const ct = e.target.getCurrentTime();
+            if (ct > maxReachedRef.current + 1) {
+              e.target.seekTo(maxReachedRef.current, true);
+              const now = Date.now();
+              if (now - lastWarnRef.current > 2500) {
+                lastWarnRef.current = now;
+                toast.error('Skipping is not allowed! Watch the full video.');
+              }
+            }
+          }
           if (e.data === window.YT.PlayerState.PLAYING) {
             clearInterval(intervalRef.current);
             // Poll often so a forward seek is corrected almost instantly.
