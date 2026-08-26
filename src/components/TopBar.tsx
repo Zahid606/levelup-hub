@@ -41,11 +41,7 @@ export function TopBar() {
               <MessageSquare className="h-4 w-4" />
               {t('nav.messages', language)}
             </Link>
-            <Link to="/messages" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-            <MessageSquare className="h-4 w-4" />
-            {t('nav.messages', language)}
-          </Link>
-          <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
               <Mail className="h-4 w-4" />
               {t('nav.contact', language)}
             </Link>
