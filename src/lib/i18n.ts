@@ -70,6 +70,7 @@ const translations: Record<string, Record<Language, string>> = {
 
   // Nav extras
   'nav.contact': { en: 'Contact Us', ur: 'رابطہ کریں', bn: 'যোগাযোগ' },
+  'nav.messages': { en: 'Messages', ur: 'پیغامات', bn: 'বার্তা' },
 
   // Contact page
   'contact.title': { en: 'Misk-ul-Kalam Social Media Links', ur: 'مسک الکلام سوشل میڈیا لنکس', bn: 'মিস্ক-উল-কালাম সোশ্যাল মিডিয়া লিঙ্কস' },
