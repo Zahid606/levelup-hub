@@ -51,6 +51,11 @@ serve(async (req) => {
     if (targetId === callerId) return json({ error: "You cannot remove your own account" }, 400);
 
     // Clean up dependent rows first
+    await adminClient.from("volunteer_assignments").delete().eq("volunteer_id", targetId);
+    await adminClient.from("volunteer_assignments").delete().eq("student_id", targetId);
+    await adminClient.from("volunteer_reports").delete().eq("volunteer_id", targetId);
+    await adminClient.from("volunteer_reports").delete().eq("student_id", targetId);
+    await adminClient.from("notifications").delete().eq("user_id", targetId);
     await adminClient.from("quiz_answers").delete().eq("user_id", targetId);
     await adminClient.from("user_progress").delete().eq("user_id", targetId);
     await adminClient.from("user_points").delete().eq("user_id", targetId);

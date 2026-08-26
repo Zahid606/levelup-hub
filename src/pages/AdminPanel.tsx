@@ -1039,9 +1039,11 @@ export default function AdminPanel() {
                         <SelectItem value="admin">
                           <span className="flex items-center gap-2"><Shield className="h-4 w-4 text-red-500" /> Admin (Full access)</span>
                         </SelectItem>
-                        <SelectItem value="volunteer">
-                          <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Lessons & add students)</span>
-                        </SelectItem>
+                        {isAdmin && (
+                          <SelectItem value="volunteer">
+                            <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Volunteer (Lessons & add students)</span>
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <Button onClick={addStaffMember} className="w-full gradient-primary text-primary-foreground">{t('general.save', language)}</Button>

@@ -44,6 +44,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const maxReachedRef = useRef(0);
+  const lastWarnRef = useRef(0);
   const completedRef = useRef(isCompleted);
   const [watchPercent, setWatchPercent] = useState(isCompleted ? 100 : 0);
   const ytReady = useYouTubeAPI();
@@ -88,8 +89,22 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
             finish();
             return;
           }
+          // A drag on the progress bar shows up as a BUFFERING/PAUSED event —
+          // correct the position immediately so the jump is barely visible.
+          if (!completedRef.current && e.target?.getCurrentTime) {
+            const ct = e.target.getCurrentTime();
+            if (ct > maxReachedRef.current + 1) {
+              e.target.seekTo(maxReachedRef.current, true);
+              const now = Date.now();
+              if (now - lastWarnRef.current > 2500) {
+                lastWarnRef.current = now;
+                toast.error('Skipping is not allowed! Watch the full video.');
+              }
+            }
+          }
           if (e.data === window.YT.PlayerState.PLAYING) {
             clearInterval(intervalRef.current);
+            // Poll often so a forward seek is corrected almost instantly.
             intervalRef.current = setInterval(() => {
               const p = playerRef.current;
               if (!p?.getCurrentTime || !p?.getDuration) return;
@@ -97,10 +112,14 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               const duration = p.getDuration();
               if (!duration) return;
 
-              // Anti-cheat: if user skipped forward beyond what they've watched, seek back
-              if (currentTime > maxReachedRef.current + 3) {
+              // Anti-cheat: if user skipped forward beyond what they've watched, seek back at once
+              if (currentTime > maxReachedRef.current + 1) {
                 p.seekTo(maxReachedRef.current, true);
-                toast.error('Skipping is not allowed! Watch the full video.');
+                const now = Date.now();
+                if (now - lastWarnRef.current > 2500) {
+                  lastWarnRef.current = now;
+                  toast.error('Skipping is not allowed! Watch the full video.');
+                }
                 return;
               }
               maxReachedRef.current = Math.max(maxReachedRef.current, currentTime);
@@ -111,7 +130,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
               // 2 seconds (or 99%+) as fully watched so it never sticks at 99%.
               if (remaining <= 2 || pct >= 99) { finish(); return; }
               setWatchPercent(pct);
-            }, 1000);
+            }, 250);
           } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
