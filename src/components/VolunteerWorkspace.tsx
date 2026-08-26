@@ -45,7 +45,7 @@ const emptyDraft = {
 };
 
 export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: boolean }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [volunteers, setVolunteers] = useState<Person[]>([]);
   const [volunteerRoles, setVolunteerRoles] = useState<any[]>([]);
@@ -60,6 +60,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   const [vReports, setVReports] = useState<VolunteerReport[]>([]);
 
   const [selectedVolunteer, setSelectedVolunteer] = useState<string>('');
+  const [volunteerSearch, setVolunteerSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
   const [answerDraft, setAnswerDraft] = useState<Record<string, string>>({});
 
@@ -171,6 +172,16 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
       });
   }, [students, studentIds, studentSearch]);
 
+  const filteredVolunteers = useMemo(() => {
+    const query = volunteerSearch.trim().toLowerCase();
+    if (!query) return volunteers;
+    return volunteers.filter(v => {
+      const name = v.full_name?.toLowerCase() || '';
+      const email = v.email?.toLowerCase() || '';
+      return name.includes(query) || email.includes(query) || v.user_id.toLowerCase().includes(query);
+    });
+  }, [volunteers, volunteerSearch]);
+
   // ---- dashboard metrics (based on today's / latest report per student) ----
   const scopedReports = useMemo(
     () => vReports.filter(r => (hasFullAccess ? true : r.volunteer_id === user?.id)),
@@ -230,6 +241,17 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     const { error } = await supabase.from('user_roles').update({ is_active: active } as any).eq('id', row.id);
     if (error) { toast.error(error.message); return; }
     toast.success(active ? 'Volunteer activated' : 'Volunteer deactivated');
+    void load();
+  }
+
+  async function deleteVolunteer(volunteerId: string, name: string) {
+    if (!isAdmin) { toast.error('Only an admin can delete volunteers'); return; }
+    if (!window.confirm(`Delete volunteer "${name}"? Their student assignments will be removed.`)) return;
+    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: volunteerId } });
+    if (error) { toast.error(error.message); return; }
+    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    toast.success('Volunteer deleted');
+    if (selectedVolunteer === volunteerId) setSelectedVolunteer('');
     void load();
   }
 
@@ -356,10 +378,21 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
             <Card className="glass-card">
               <CardHeader className="pb-2"><CardTitle className="text-base">Volunteers</CardTitle></CardHeader>
               <CardContent className="space-y-2">
+                <Input
+                  placeholder="Search volunteers by name or email…"
+                  value={volunteerSearch}
+                  onChange={e => setVolunteerSearch(e.target.value)}
+                  className="max-w-sm"
+                />
                 {volunteers.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No volunteers yet — add one from the Staff tab.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No volunteers yet — an admin can add one from the Staff tab.
+                  </p>
                 )}
-                {volunteers.map(v => {
+                {volunteers.length > 0 && filteredVolunteers.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No volunteers match your search.</p>
+                )}
+                {filteredVolunteers.map(v => {
                   const role = volunteerRoles.find(r => r.user_id === v.user_id);
                   const active = role?.is_active !== false;
                   const count = assignments.filter(a => a.volunteer_id === v.user_id).length;
@@ -376,6 +409,16 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                           <Switch checked={active} onCheckedChange={c => toggleVolunteerActive(v.user_id, c)} />
                         </div>
                         <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => setSelectedVolunteer(v.user_id)}>Manage students</Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                            onClick={() => deleteVolunteer(v.user_id, v.full_name || 'volunteer')}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -389,7 +432,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
                 <Select value={selectedVolunteer} onValueChange={setSelectedVolunteer}>
                   <SelectTrigger className="max-w-sm"><SelectValue placeholder="Select volunteer" /></SelectTrigger>
                   <SelectContent>
-                    {volunteers.map(v => (
+                    {filteredVolunteers.map(v => (
                       <SelectItem key={v.user_id} value={v.user_id}>{v.full_name || v.user_id.slice(0, 8)}</SelectItem>
                     ))}
                   </SelectContent>

@@ -58,7 +58,8 @@ serve(async (req) => {
     }
 
     const roleNames = (callerRoles || []).map((r: { role: string }) => r.role);
-    const hasFullAccess = roleNames.includes("admin") || roleNames.includes("manager");
+    const isAdminCaller = roleNames.includes("admin");
+    const hasFullAccess = isAdminCaller || roleNames.includes("manager");
     const isVolunteerOnly = roleNames.includes("volunteer") && !hasFullAccess;
 
     if (!hasFullAccess && !isVolunteerOnly) {
@@ -90,6 +91,9 @@ serve(async (req) => {
     }
     if (!hasFullAccess && STAFF_ROLES.includes(requestedRole)) {
       return json({ error: "Only managers and admins can create staff accounts" }, 403);
+    }
+    if (!isAdminCaller && requestedRole === "volunteer") {
+      return json({ error: "Only an admin can add volunteers" }, 403);
     }
 
     const userMetadata = {
