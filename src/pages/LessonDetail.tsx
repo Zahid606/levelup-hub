@@ -44,6 +44,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const maxReachedRef = useRef(0);
+  const lastWarnRef = useRef(0);
   const completedRef = useRef(isCompleted);
   const [watchPercent, setWatchPercent] = useState(isCompleted ? 100 : 0);
   const ytReady = useYouTubeAPI();
