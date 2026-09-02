@@ -42,7 +42,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const maxReachedRef = useRef(0);
   const lastWarnRef = useRef(0);
   const completedRef = useRef(isCompleted);

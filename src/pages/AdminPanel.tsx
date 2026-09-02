@@ -234,7 +234,7 @@ export default function AdminPanel() {
 
   const giveGift = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
-    const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
+    const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id ?? null });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
     setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen(''); loadAll();
@@ -822,9 +822,9 @@ export default function AdminPanel() {
                        <div className="text-center">
                          {hasFullAccess && editingPoints?.userId === student.user_id ? (
                            <div className="flex items-center gap-1">
-                             <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
-                               onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
-                             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                             <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints(editingPoints ? { ...editingPoints, points: e.target.value } : editingPoints)} className="w-20 h-7 text-sm"
+                               onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
+                             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0)}>✓</Button>
                            </div>
                          ) : hasFullAccess ? (
                            <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>

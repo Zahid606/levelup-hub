@@ -67,7 +67,6 @@ export const adminResetPassword = createServerFn({ method: "POST" })
 
     // Best-effort: revoke existing sessions so old tokens stop working.
     try {
-      // @ts-expect-error supabase-js v2 admin.signOut accepts (userId, scope)
       await supabaseAdmin.auth.admin.signOut(data.user_id, "global");
     } catch {
       /* non-fatal */
