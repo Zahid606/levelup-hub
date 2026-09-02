@@ -822,7 +822,7 @@ export default function AdminPanel() {
                        <div className="text-center">
                          {hasFullAccess && editingPoints?.userId === student.user_id ? (
                            <div className="flex items-center gap-1">
-                             <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints(editingPoints ? { ...editingPoints, points: e.target.value } : editingPoints)} className="w-20 h-7 text-sm"
+                             <Input type="number" value={editingPoints?.points ?? ''} onChange={e => setEditingPoints(editingPoints ? { ...editingPoints, points: e.target.value } : editingPoints)} className="w-20 h-7 text-sm"
                                onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
                              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0)}>✓</Button>
                            </div>
