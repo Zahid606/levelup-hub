@@ -199,7 +199,7 @@ export function StudentActivityLog({ students, quizAnswers, allProgress, allPoin
                                 {student.answers
                                   .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                                   .map((answer: any) => (
-                                    <div key={answer.id} className="flex items-center justify-between text-sm py-1 px-2 rounded bg-background/50">
+                                    <div key={answer.id} className="flex items-center justify-between text-sm py-1 px-2 rounded-sm bg-background/50">
                                       <div className="flex items-center gap-2">
                                         {answer.is_correct
                                           ? <CheckCircle className="h-3.5 w-3.5 text-green-500" />
@@ -224,7 +224,7 @@ export function StudentActivityLog({ students, quizAnswers, allProgress, allPoin
                               <h4 className="text-sm font-semibold mb-2">Lesson Progress</h4>
                               <div className="space-y-1 max-h-48 overflow-y-auto">
                                 {student.progress.map((p: any) => (
-                                  <div key={p.id} className="flex items-center justify-between text-sm py-1 px-2 rounded bg-background/50">
+                                  <div key={p.id} className="flex items-center justify-between text-sm py-1 px-2 rounded-sm bg-background/50">
                                     <div className="flex items-center gap-2">
                                       {p.completed
                                         ? <CheckCircle className="h-3.5 w-3.5 text-green-500" />
@@ -248,7 +248,7 @@ export function StudentActivityLog({ students, quizAnswers, allProgress, allPoin
                                 {student.points
                                   .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                                   .map((pt: any) => (
-                                    <div key={pt.id} className="flex items-center justify-between text-sm py-1 px-2 rounded bg-background/50">
+                                    <div key={pt.id} className="flex items-center justify-between text-sm py-1 px-2 rounded-sm bg-background/50">
                                       <div className="flex items-center gap-2">
                                         <span className={pt.points >= 0 ? 'text-green-500' : 'text-red-500'}>{pt.points >= 0 ? '+' : ''}{pt.points}</span>
                                         <span className="text-muted-foreground">{pt.reason || 'No reason'}</span>
