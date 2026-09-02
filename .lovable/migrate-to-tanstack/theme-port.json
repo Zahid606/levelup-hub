@@ -1,0 +1,28 @@
+{
+  "customizations": [
+    { "token": "--background/--foreground light+dark brand HSL palette (teal/amber)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--card / --card-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--popover / --popover-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--primary / --primary-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--secondary / --secondary-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--muted / --muted-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--accent / --accent-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--destructive / --destructive-foreground", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--border / --input / --ring / --radius 0.75rem", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--sidebar-* (8 tokens, light+dark)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "--success / --success-foreground", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "--warning / --warning-foreground", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "--gold / --silver / --bronze", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "--font-heading (Space Grotesk) / --font-body (Inter) + Google Fonts import", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "container config (center, 2rem padding, 1400px cap)", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "glass-card", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "gradient-primary", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "gradient-accent", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "gradient-dark", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "text-gradient (+ .dark variant)", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "islamic-border", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "animate-float + float keyframes", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "slide-up / scale-in / accordion keyframes + animations", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css" },
+    { "token": "base layer: border-border on *, body bg/text/font/antialiased, heading font on h1-h6", "source": "src/index.css", "reappliedIn": "src/styles.css" }
+  ]
+}
