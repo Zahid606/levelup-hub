@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Link } from 'react-router-dom';
+import { Link } from '@/lib/router-compat';
 import { BookOpen, Trophy, Star, Gift, CheckCircle2, Search } from 'lucide-react';
 
 export default function StudentDashboard() {
