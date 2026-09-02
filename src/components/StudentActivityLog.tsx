@@ -99,6 +99,7 @@ export function StudentActivityLog({ students, quizAnswers, allProgress, allPoin
       case 'passed': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="h-3 w-3 mr-1" />Passed</Badge>;
       case 'failed': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><XCircle className="h-3 w-3 mr-1" />All Wrong</Badge>;
       case 'not_attempted': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><AlertCircle className="h-3 w-3 mr-1" />Not Attempted</Badge>;
+      default: return null;
     }
   };
 
