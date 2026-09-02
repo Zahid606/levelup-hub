@@ -7,7 +7,7 @@ import { t, type Language } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 export default function AdminLogin() {
-  const language = ((localStorage.getItem('lang') as Language) || 'en');
+  const language = (typeof window !== 'undefined' ? ((localStorage.getItem('lang') as Language) || 'en') : 'en');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
