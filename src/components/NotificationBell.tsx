@@ -40,12 +40,13 @@ export function NotificationBell() {
   // Ask once for OS-level notification permission (works on Android/desktop
   // even when the tab is in the background or the screen is locked).
   useEffect(() => {
-    if (!user || typeof window === 'undefined' || !('Notification' in window)) return;
+    if (!user || typeof window === 'undefined' || !('Notification' in window)) return undefined;
     if (Notification.permission === 'default') {
       const ask = () => { void Notification.requestPermission(); window.removeEventListener('pointerdown', ask); };
       window.addEventListener('pointerdown', ask, { once: true });
       return () => window.removeEventListener('pointerdown', ask);
     }
+    return undefined;
   }, [user]);
 
   const pushToOS = useCallback((list: Notification[]) => {
