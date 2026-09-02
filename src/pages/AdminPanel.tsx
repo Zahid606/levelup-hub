@@ -18,6 +18,9 @@ import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieCha
 import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { StudentActivityLog } from '@/components/StudentActivityLog';
 import { LessonVideoManager } from '@/components/LessonVideoManager';
+import { staffCreateUser } from '@/lib/staffCreateUser.functions';
+import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
+import { adminResetPassword } from '@/lib/adminResetPassword.functions';
 // xlsx + file-saver are loaded on-demand inside the export handler to keep the
 // initial admin bundle small.
 
@@ -231,7 +234,7 @@ export default function AdminPanel() {
 
   const giveGift = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can give gifts'); return; }
-    const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id });
+    const { error } = await supabase.from('gifts').insert({ user_id: newGift.user_id, gift_name: newGift.gift_name, description: newGift.description, given_by: user?.id ?? null });
     if (error) { toast.error(error.message); return; }
     toast.success('Gift sent!');
     setNewGift({ user_id: '', gift_name: '', description: '' }); setDialogOpen(''); loadAll();
@@ -261,31 +264,37 @@ export default function AdminPanel() {
     if (!hasFullAccess) { toast.error('Only managers and admins can remove staff'); return; }
     if (userId === user?.id) { toast.error('You cannot remove your own account'); return; }
     if (!confirm('Remove this worker? Their account and data will be permanently deleted.')) return;
-    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: userId } });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffDeleteUser({ data: { user_id: userId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Worker removed'); loadAll();
   };
 
 
   const addStaffMember = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
-    const { data, error } = await supabase.functions.invoke('staff-create-user', {
-      body: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role },
-    });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffCreateUser({
+        data: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role as 'admin' | 'manager' | 'volunteer' | 'student' },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
     setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
     if (!canAddStudent) { toast.error('You do not have permission to add students'); return; }
-    const { data, error } = await supabase.functions.invoke('staff-create-user', {
-      body: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
-    });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffCreateUser({
+        data: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Student account created!');
     setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
   };
@@ -372,26 +381,9 @@ export default function AdminPanel() {
     if (!resetPasswordStudent || !newPassword) return;
     setResettingPassword(true);
     try {
-      // Call edge function directly so we can read the JSON error body even on non-2xx
-      const { data: { session } } = await supabase.auth.getSession();
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`;
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? ''}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({
-          user_id: resetPasswordStudent.user_id,
-          email: resetPasswordStudent.email,
-          new_password: newPassword,
-        }),
+      await adminResetPassword({
+        data: { user_id: resetPasswordStudent.user_id, new_password: newPassword },
       });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok || json?.error) {
-        throw new Error(json?.error || `Failed to reset password (HTTP ${resp.status})`);
-      }
       toast.success(`Password reset for ${resetPasswordStudent.email || resetPasswordStudent.full_name || 'student'}! The backend verified the new password works.`);
       setResetPasswordStudent(null); setNewPassword('');
     } catch (err: any) {
@@ -830,9 +822,9 @@ export default function AdminPanel() {
                        <div className="text-center">
                          {hasFullAccess && editingPoints?.userId === student.user_id ? (
                            <div className="flex items-center gap-1">
-                             <Input type="number" value={editingPoints.points} onChange={e => setEditingPoints({ ...editingPoints, points: e.target.value })} className="w-20 h-7 text-sm"
-                               onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
-                             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints.points) || 0)}>✓</Button>
+                             <Input type="number" value={editingPoints?.points ?? ''} onChange={e => setEditingPoints(editingPoints ? { ...editingPoints, points: e.target.value } : editingPoints)} className="w-20 h-7 text-sm"
+                               onKeyDown={e => { if (e.key === 'Enter') updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0); if (e.key === 'Escape') setEditingPoints(null); }} />
+                             <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => updateStudentPoints(student.user_id, parseInt(editingPoints?.points ?? '') || 0)}>✓</Button>
                            </div>
                          ) : hasFullAccess ? (
                            <div className="flex items-center gap-1 cursor-pointer" onClick={() => setEditingPoints({ userId: student.user_id, points: String(getStudentPoints(student.user_id)) })}>

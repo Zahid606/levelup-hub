@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from "@/lib/router-compat";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 const PageLoader = () => (

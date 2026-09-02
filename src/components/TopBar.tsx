@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen, MessageSquare } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/lib/router-compat';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import { NotificationBell } from '@/components/NotificationBell';
 

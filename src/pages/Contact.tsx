@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { TopBar } from '@/components/TopBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { t } from '@/lib/i18n';

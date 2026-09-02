@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { AlertTriangle, MessageSquare, UserCheck, Users, Clock, Star, Trash2, Send, ClipboardList, CheckCircle2, XCircle } from 'lucide-react';
+import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
 
 type Person = { user_id: string; full_name: string | null; email?: string | null; phone?: string | null };
 
@@ -148,7 +149,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     const cutoff = Date.now() - INACTIVE_DAYS * 86400000;
     return myStudents.filter(s => {
       const last = lastActivity(s.user_id);
-      return last === null || last < cutoff;
+      return last == null || last < cutoff;
     });
   }, [myStudents, lastActivity]);
 
@@ -212,7 +213,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     const count = assignments.filter(a => a.volunteer_id === selectedVolunteer).length;
     if (count >= 100) { toast.error('A volunteer can have at most 100 students'); return; }
     const { data, error } = await supabase.from('volunteer_assignments').insert({
-      volunteer_id: selectedVolunteer, student_id: studentId, assigned_by: user?.id,
+      volunteer_id: selectedVolunteer, student_id: studentId, assigned_by: user?.id ?? null,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     // Show it right away, then refresh from the server.
@@ -229,7 +230,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   }
 
   async function reassign(assignmentId: string, newVolunteerId: string) {
-    const { error } = await supabase.from('volunteer_assignments').update({ volunteer_id: newVolunteerId, assigned_by: user?.id }).eq('id', assignmentId);
+    const { error } = await supabase.from('volunteer_assignments').update({ volunteer_id: newVolunteerId, assigned_by: user?.id ?? null }).eq('id', assignmentId);
     if (error) { toast.error(error.message); return; }
     toast.success('Student reassigned');
     void load();
@@ -247,9 +248,11 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   async function deleteVolunteer(volunteerId: string, name: string) {
     if (!isAdmin) { toast.error('Only an admin can delete volunteers'); return; }
     if (!window.confirm(`Delete volunteer "${name}"? Their student assignments will be removed.`)) return;
-    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: volunteerId } });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffDeleteUser({ data: { user_id: volunteerId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Volunteer deleted');
     if (selectedVolunteer === volunteerId) setSelectedVolunteer('');
     void load();
@@ -292,7 +295,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
     const text = (answerDraft[q.id] || '').trim();
     if (!text) { toast.error('Write an answer first'); return; }
     const { error } = await supabase.from('student_questions').update({
-      answer: text, answered_by: user?.id, answered_at: new Date().toISOString(), status: 'answered',
+      answer: text, answered_by: user?.id ?? null, answered_at: new Date().toISOString(), status: 'answered',
     }).eq('id', q.id);
     if (error) { toast.error(error.message); return; }
     toast.success('Answer sent');
@@ -301,7 +304,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   }
 
   async function resolveReport(id: string) {
-    const { error } = await supabase.from('student_reports').update({ status: 'resolved', handled_by: user?.id }).eq('id', id);
+    const { error } = await supabase.from('student_reports').update({ status: 'resolved', handled_by: user?.id ?? null }).eq('id', id);
     if (error) { toast.error(error.message); return; }
     void load();
   }

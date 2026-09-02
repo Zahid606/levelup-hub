@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from '@/lib/router-compat';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -42,7 +42,7 @@ function VideoPlayer({ videoId, contentId, videoPoints, onComplete, isCompleted 
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const maxReachedRef = useRef(0);
   const lastWarnRef = useRef(0);
   const completedRef = useRef(isCompleted);

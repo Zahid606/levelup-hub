@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/lib/router-compat';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,12 +40,13 @@ export function NotificationBell() {
   // Ask once for OS-level notification permission (works on Android/desktop
   // even when the tab is in the background or the screen is locked).
   useEffect(() => {
-    if (!user || typeof window === 'undefined' || !('Notification' in window)) return;
+    if (!user || typeof window === 'undefined' || !('Notification' in window)) return undefined;
     if (Notification.permission === 'default') {
       const ask = () => { void Notification.requestPermission(); window.removeEventListener('pointerdown', ask); };
       window.addEventListener('pointerdown', ask, { once: true });
       return () => window.removeEventListener('pointerdown', ask);
     }
+    return undefined;
   }, [user]);
 
   const pushToOS = useCallback((list: Notification[]) => {

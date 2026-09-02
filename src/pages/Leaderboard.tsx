@@ -88,6 +88,7 @@ export default function Leaderboard() {
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[1, 0, 2].map(idx => {
               const entry = entries[idx];
+              if (!entry) return null;
               const isMe = entry.user_id === user?.id;
               return (
                 <Card key={entry.user_id} className={`glass-card text-center ${getRankBg(idx)} ${isMe ? 'ring-2 ring-primary' : ''} ${idx === 0 ? 'scale-105' : ''}`}>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from '@/lib/router-compat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,10 +14,10 @@ const SAUDI_CITIES = [
   'Al Ahsa', 'Arar', 'Sakaka', 'Jizan', 'Al Baha', 'Bisha', 'Unaizah', 'Qatif', 'Other'
 ];
 
-const selectClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+const selectClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2';
 
 export default function Login() {
-  const language = ((localStorage.getItem('lang') as Language) || 'en');
+  const language = (typeof window !== 'undefined' ? ((localStorage.getItem('lang') as Language) || 'en') : 'en');
   const navigate = useNavigate();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');

@@ -1,0 +1,6 @@
+{"functions": [
+  {"name": "admin-reset-password", "classification": "internal-only", "signal": "raw fetch to /functions/v1/ from src/pages/AdminPanel.tsx", "outcome": "migrated"},
+  {"name": "staff-create-user", "classification": "internal-only", "signal": "invoked from src/pages/AdminPanel.tsx (2 call sites)", "outcome": "migrated"},
+  {"name": "staff-delete-user", "classification": "internal-only", "signal": "invoked from src/pages/AdminPanel.tsx and src/components/VolunteerWorkspace.tsx", "outcome": "migrated"},
+  {"name": "bootstrap-admin", "classification": "unknown", "signal": "no internal call sites; one-off admin setup utility with hardcoded credentials", "outcome": "left"}
+]}

@@ -55,8 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isManager, setIsManager] = useState(false);
   const [isEmployee, setIsEmployee] = useState(false);
   const [isVolunteer, setIsVolunteer] = useState(false);
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'en');
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [language, setLanguage] = useState<Language>(() =>
+    typeof window !== 'undefined' ? ((localStorage.getItem('lang') as Language) || 'en') : 'en',
+  );
+  const [darkMode, setDarkMode] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('darkMode') === 'true' : false,
+  );
   const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => { localStorage.setItem('lang', language); }, [language]);
