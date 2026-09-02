@@ -248,9 +248,11 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
   async function deleteVolunteer(volunteerId: string, name: string) {
     if (!isAdmin) { toast.error('Only an admin can delete volunteers'); return; }
     if (!window.confirm(`Delete volunteer "${name}"? Their student assignments will be removed.`)) return;
-    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: volunteerId } });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffDeleteUser({ data: { user_id: volunteerId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Volunteer deleted');
     if (selectedVolunteer === volunteerId) setSelectedVolunteer('');
     void load();
