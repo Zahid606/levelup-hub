@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { AlertTriangle, MessageSquare, UserCheck, Users, Clock, Star, Trash2, Send, ClipboardList, CheckCircle2, XCircle } from 'lucide-react';
+import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
 
 type Person = { user_id: string; full_name: string | null; email?: string | null; phone?: string | null };
 
