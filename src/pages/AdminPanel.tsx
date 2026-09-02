@@ -261,31 +261,37 @@ export default function AdminPanel() {
     if (!hasFullAccess) { toast.error('Only managers and admins can remove staff'); return; }
     if (userId === user?.id) { toast.error('You cannot remove your own account'); return; }
     if (!confirm('Remove this worker? Their account and data will be permanently deleted.')) return;
-    const { data, error } = await supabase.functions.invoke('staff-delete-user', { body: { user_id: userId } });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffDeleteUser({ data: { user_id: userId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Worker removed'); loadAll();
   };
 
 
   const addStaffMember = async () => {
     if (!hasFullAccess) { toast.error('Only managers and admins can add staff'); return; }
-    const { data, error } = await supabase.functions.invoke('staff-create-user', {
-      body: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role },
-    });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffCreateUser({
+        data: { email: newStaff.email, password: newStaff.password, full_name: newStaff.full_name, role: newStaff.role as 'admin' | 'manager' | 'volunteer' | 'student' },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success(`${ROLE_CONFIG[newStaff.role as keyof typeof ROLE_CONFIG]?.label || 'Staff'} account created!`);
     setNewStaff({ email: '', password: '', full_name: '', role: 'manager' }); setDialogOpen(''); loadAll();
   };
 
   const addStudent = async () => {
     if (!canAddStudent) { toast.error('You do not have permission to add students'); return; }
-    const { data, error } = await supabase.functions.invoke('staff-create-user', {
-      body: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
-    });
-    if (error) { toast.error(error.message); return; }
-    if ((data as any)?.error) { toast.error((data as any).error); return; }
+    try {
+      await staffCreateUser({
+        data: { email: newStudent.email, password: newStudent.password, full_name: newStudent.full_name, role: 'student' },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err)); return;
+    }
     toast.success('Student account created!');
     setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
   };
