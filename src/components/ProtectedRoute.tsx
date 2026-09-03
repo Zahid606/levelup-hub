@@ -1,5 +1,6 @@
 import { Navigate } from "@/lib/router-compat";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { PushGate } from "@/components/PushGate";
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
