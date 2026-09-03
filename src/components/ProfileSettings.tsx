@@ -27,6 +27,49 @@ export function ProfileSettings() {
   const [loading, setLoading] = useState(false);
   const [pushState, setPushState] = useState<PushPermissionState>('unsupported');
   const [pushBusy, setPushBusy] = useState(false);
+  const [geoState, setGeoState] = useState<GeoPermissionState>('default');
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    let unwatch: (() => void) | undefined;
+    void getGeoState().then((s) => { if (!cancelled) setGeoState(s); });
+    void watchGeoState((s) => { if (!cancelled) setGeoState(s); }).then((fn) => {
+      if (cancelled) fn(); else unwatch = fn;
+    });
+    return () => { cancelled = true; unwatch?.(); };
+  }, [open]);
+
+  const requestLocation = async () => {
+    setGeoBusy(true);
+    const result = await requestGeoPermission();
+    setGeoBusy(false);
+    if (result.status === 'granted') {
+      setGeoState('granted');
+      setCoords(result.coords);
+      toast.success('Location allowed on this device');
+      return;
+    }
+    setGeoState(result.status === 'unsupported' ? 'unsupported' : result.status === 'denied' ? 'denied' : await getGeoState());
+    toast.error(
+      result.status === 'denied' ? 'Location blocked. Allow it in your browser or device settings.'
+      : result.status === 'timeout' ? 'Location request timed out. Please try again.'
+      : result.status === 'unsupported' ? 'This browser or device does not support location'
+      : 'Could not get your location. Please try again.',
+    );
+  };
+
+  const geoDescription = geoState === 'granted'
+    ? coords
+      ? `Allowed — detected at ${coords.latitude.toFixed(3)}, ${coords.longitude.toFixed(3)}.`
+      : 'Allowed — this device can share your location.'
+    : geoState === 'denied'
+      ? 'Blocked. Open this site’s permissions (lock or site-info icon beside the address bar, or Settings → Site settings on mobile), set Location to Allow, then reload this page.'
+      : geoState === 'unsupported'
+        ? 'Location is unavailable in this browser or device.'
+        : 'Not set. Choose Allow Location to show the browser’s location prompt.';
 
   useEffect(() => {
     if (!open || !user) return;
