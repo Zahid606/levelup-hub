@@ -329,8 +329,32 @@ export default function AdminPanel() {
 
   const togglePublish = async (id: string, current: boolean) => {
     if (!canManageContent) { toast.error('You do not have permission to publish lessons'); return; }
-    await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
+    const { error } = await supabase.from('lessons').update({ is_published: !current }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    // Only after the lesson is confirmed published, push it to students' devices.
+    if (!current) {
+      const lesson = lessons.find(l => l.id === id);
+      const title = lesson?.title || 'New lesson';
+      try {
+        const res = await sendPushToStudents({
+          data: {
+            title: '🔔 New Lesson Available',
+            body: `${title} is ready to watch.`,
+            url: `/lesson/${id}`,
+            tag: `lesson:${id}`,
+          },
+        });
+        toast.success(`Lesson published — notified ${res.sent} device(s)`);
+      } catch (err) {
+        console.error(err);
+        toast.success('Lesson published (in-app notifications sent)');
+      }
+    } else {
+      toast.success('Lesson unpublished');
+    }
+    loadAll();
   };
+
 
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
   const getStudentProgress = (userId: string) => allProgress.filter(p => p.user_id === userId && p.completed).length;
