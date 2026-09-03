@@ -55,8 +55,13 @@ export function ProfileSettings() {
       setPushState(status === 'denied' ? 'denied' : status === 'unsupported' ? 'unsupported' : 'unregistered');
       return;
     }
-    await disablePush();
+    const disabled = await disablePush();
     setPushBusy(false);
+    if (!disabled) {
+      setPushState(await getPushState(user.id));
+      toast.error('Could not turn off notifications on this device. Please try again.');
+      return;
+    }
     setPushState(typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'denied' : 'unregistered');
     toast.success('Push notifications turned off on this device');
   };

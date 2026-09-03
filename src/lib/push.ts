@@ -176,8 +176,8 @@ export async function getPushState(userId?: string): Promise<PushPermissionState
 }
 
 /** Turns off push for this device and forgets the stored subscription. */
-export async function disablePush(): Promise<void> {
-  if (!pushSupported()) return;
+export async function disablePush(): Promise<boolean> {
+  if (!pushSupported()) return false;
   try {
     const registration = await getPushRegistration();
     const sub = await registration?.pushManager.getSubscription();
@@ -186,7 +186,9 @@ export async function disablePush(): Promise<void> {
       if (error) throw error;
       await sub.unsubscribe();
     }
+    return true;
   } catch (err) {
     console.error('push disable failed', err);
+    return false;
   }
 }
