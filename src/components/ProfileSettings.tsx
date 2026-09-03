@@ -57,7 +57,7 @@ export function ProfileSettings() {
     }
     await disablePush();
     setPushBusy(false);
-    setPushState(Notification.permission === 'denied' ? 'denied' : 'unregistered');
+    setPushState(typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'denied' : 'unregistered');
     toast.success('Push notifications turned off on this device');
   };
 

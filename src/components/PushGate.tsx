@@ -18,15 +18,18 @@ export function PushGate() {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    let timer: number | undefined;
     void getPushState(user.id).then((state) => {
       if (!active) return;
       // Repair an allowed-but-missing registration for existing students.
       if (state === 'unregistered') { void enablePush(user.id); return; }
       if (state !== 'default' || localStorage.getItem(DISMISS_KEY) === '1') return;
-      const timer = window.setTimeout(() => setShow(true), 1500);
-      return () => window.clearTimeout(timer);
+      timer = window.setTimeout(() => setShow(true), 1500);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
   }, [user]);
 
   if (!show || !user) return null;
