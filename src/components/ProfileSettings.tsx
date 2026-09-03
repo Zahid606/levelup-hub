@@ -103,6 +103,27 @@ export function ProfileSettings() {
           <Button onClick={handleSave} disabled={loading} className="w-full gradient-primary text-primary-foreground">
             Save Changes
           </Button>
+
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+            <div className="flex items-start gap-2 min-w-0">
+              <Bell className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  {pushSupported()
+                    ? 'Get new lesson alerts even when the app is closed.'
+                    : 'Not supported on this device or browser.'}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={pushOn}
+              disabled={pushBusy || !pushSupported()}
+              onCheckedChange={(v) => { void togglePush(v); }}
+              aria-label="Push notifications"
+            />
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>
