@@ -24,6 +24,35 @@ export function ProfileSettings() {
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    void isPushEnabled().then(setPushOn);
+  }, [open]);
+
+  const togglePush = async (next: boolean) => {
+    if (!user) return;
+    setPushBusy(true);
+    if (next) {
+      const status = await enablePush(user.id);
+      setPushBusy(false);
+      if (status === 'subscribed') { setPushOn(true); toast.success('Notifications enabled on this device'); return; }
+      toast.error(
+        status === 'open-in-new-tab' ? 'Open the site in its own browser tab, then try again'
+        : status === 'denied' ? 'Allow notifications in your browser settings'
+        : 'This device does not support push notifications',
+      );
+      setPushOn(false);
+      return;
+    }
+    await disablePush();
+    setPushBusy(false);
+    setPushOn(false);
+    toast.success('Notifications turned off for this device');
+  };
+
 
   useEffect(() => {
     if (!user || !open) return;
