@@ -37,6 +37,8 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+
   const seenRef = useRef<Set<string> | null>(null);
 
   // Register the device for background push (works when the site is closed or
