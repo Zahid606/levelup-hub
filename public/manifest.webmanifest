@@ -1,0 +1,13 @@
+{
+  "name": "Misk-ul-Kalam",
+  "short_name": "Misk-ul-Kalam",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "/logo-small.webp", "sizes": "192x192", "type": "image/webp", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
