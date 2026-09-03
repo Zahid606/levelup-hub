@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings, Bell, BellOff, CircleCheck, ExternalLink } from 'lucide-react';
+import { Settings, Bell, BellOff, CircleCheck, ExternalLink, MapPin, MapPinOff } from 'lucide-react';
 import { disablePush, enablePush, getPushState, type PushPermissionState } from '@/lib/push';
+import { getGeoState, requestGeoPermission, watchGeoState, type GeoPermissionState } from '@/lib/geo';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
@@ -26,6 +27,49 @@ export function ProfileSettings() {
   const [loading, setLoading] = useState(false);
   const [pushState, setPushState] = useState<PushPermissionState>('unsupported');
   const [pushBusy, setPushBusy] = useState(false);
+  const [geoState, setGeoState] = useState<GeoPermissionState>('default');
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    let unwatch: (() => void) | undefined;
+    void getGeoState().then((s) => { if (!cancelled) setGeoState(s); });
+    void watchGeoState((s) => { if (!cancelled) setGeoState(s); }).then((fn) => {
+      if (cancelled) fn(); else unwatch = fn;
+    });
+    return () => { cancelled = true; unwatch?.(); };
+  }, [open]);
+
+  const requestLocation = async () => {
+    setGeoBusy(true);
+    const result = await requestGeoPermission();
+    setGeoBusy(false);
+    if (result.status === 'granted') {
+      setGeoState('granted');
+      setCoords(result.coords);
+      toast.success('Location allowed on this device');
+      return;
+    }
+    setGeoState(result.status === 'unsupported' ? 'unsupported' : result.status === 'denied' ? 'denied' : await getGeoState());
+    toast.error(
+      result.status === 'denied' ? 'Location blocked. Allow it in your browser or device settings.'
+      : result.status === 'timeout' ? 'Location request timed out. Please try again.'
+      : result.status === 'unsupported' ? 'This browser or device does not support location'
+      : 'Could not get your location. Please try again.',
+    );
+  };
+
+  const geoDescription = geoState === 'granted'
+    ? coords
+      ? `Allowed — detected at ${coords.latitude.toFixed(3)}, ${coords.longitude.toFixed(3)}.`
+      : 'Allowed — this device can share your location.'
+    : geoState === 'denied'
+      ? 'Blocked. Open this site’s permissions (lock or site-info icon beside the address bar, or Settings → Site settings on mobile), set Location to Allow, then reload this page.'
+      : geoState === 'unsupported'
+        ? 'Location is unavailable in this browser or device.'
+        : 'Not set. Choose Allow Location to show the browser’s location prompt.';
 
   useEffect(() => {
     if (!open || !user) return;
@@ -163,6 +207,30 @@ export function ProfileSettings() {
             )}
             {pushState === 'denied' && (
               <Button type="button" size="sm" variant="outline" onClick={() => toast.info('Use the lock or site-info icon beside the address bar, open Site settings, and change Notifications to Allow.')}>
+                <ExternalLink className="h-4 w-4" /> How to enable
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <div className="flex items-start gap-2 min-w-0">
+              {geoState === 'granted'
+                ? <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                : <MapPinOff className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  Location: {geoState === 'granted' ? 'ON (Allowed)' : geoState === 'denied' ? 'Blocked' : geoState === 'unsupported' ? 'Unavailable' : 'Not set'}
+                </p>
+                <p className="text-xs text-muted-foreground">{geoDescription}</p>
+              </div>
+            </div>
+            {geoState !== 'unsupported' && geoState !== 'denied' && (
+              <Button type="button" size="sm" disabled={geoBusy} onClick={() => { void requestLocation(); }}>
+                <MapPin className="h-4 w-4" /> {geoState === 'granted' ? 'Update my location' : 'Allow Location'}
+              </Button>
+            )}
+            {geoState === 'denied' && (
+              <Button type="button" size="sm" variant="outline" onClick={() => toast.info('Open the lock or site-info icon beside the address bar (or Site settings on mobile), set Location to Allow, then reload this page.')}>
                 <ExternalLink className="h-4 w-4" /> How to enable
               </Button>
             )}
