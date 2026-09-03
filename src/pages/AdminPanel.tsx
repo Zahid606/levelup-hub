@@ -21,6 +21,8 @@ import { LessonVideoManager } from '@/components/LessonVideoManager';
 import { staffCreateUser } from '@/lib/staffCreateUser.functions';
 import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
 import { adminResetPassword } from '@/lib/adminResetPassword.functions';
+import { sendPushToStudents } from '@/lib/pushNotify.functions';
+
 // xlsx + file-saver are loaded on-demand inside the export handler to keep the
 // initial admin bundle small.
 
