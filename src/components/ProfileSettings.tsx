@@ -212,6 +212,30 @@ export function ProfileSettings() {
             )}
           </div>
 
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <div className="flex items-start gap-2 min-w-0">
+              {geoState === 'granted'
+                ? <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                : <MapPinOff className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  Location: {geoState === 'granted' ? 'ON (Allowed)' : geoState === 'denied' ? 'Blocked' : geoState === 'unsupported' ? 'Unavailable' : 'Not set'}
+                </p>
+                <p className="text-xs text-muted-foreground">{geoDescription}</p>
+              </div>
+            </div>
+            {geoState !== 'unsupported' && geoState !== 'denied' && (
+              <Button type="button" size="sm" disabled={geoBusy} onClick={() => { void requestLocation(); }}>
+                <MapPin className="h-4 w-4" /> {geoState === 'granted' ? 'Update my location' : 'Allow Location'}
+              </Button>
+            )}
+            {geoState === 'denied' && (
+              <Button type="button" size="sm" variant="outline" onClick={() => toast.info('Open the lock or site-info icon beside the address bar (or Site settings on mobile), set Location to Allow, then reload this page.')}>
+                <ExternalLink className="h-4 w-4" /> How to enable
+              </Button>
+            )}
+          </div>
+
         </div>
       </DialogContent>
     </Dialog>
