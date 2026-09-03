@@ -158,6 +158,28 @@ export function NotificationBell() {
             </Button>
           )}
         </div>
+        {pushSupported() && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
+          <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">Get new lesson alerts on this device</p>
+            <Button
+              size="sm"
+              className="h-7 text-xs gradient-primary text-primary-foreground shrink-0"
+              onClick={async () => {
+                const status = await enablePush(user.id);
+                setPushMsg(
+                  status === 'subscribed' ? 'Notifications enabled!'
+                  : status === 'open-in-new-tab' ? 'Open the site in its own tab to enable.'
+                  : status === 'denied' ? 'Allow notifications in your browser settings.'
+                  : 'Notifications are not supported on this device.',
+                );
+              }}
+            >
+              Enable
+            </Button>
+          </div>
+        )}
+        {pushMsg && <p className="px-3 py-2 text-xs text-muted-foreground border-b border-border/60">{pushMsg}</p>}
+
         <ScrollArea className="max-h-[60vh]">
           {items.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
