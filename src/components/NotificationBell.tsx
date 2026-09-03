@@ -37,17 +37,18 @@ export function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([]);
   const seenRef = useRef<Set<string> | null>(null);
 
-  // Ask once for OS-level notification permission (works on Android/desktop
-  // even when the tab is in the background or the screen is locked).
+  // Register the device for background push (works when the site is closed or
+  // the phone is locked). Browsers require a user gesture, so we hook the first
+  // interaction and, failing that, offer an explicit button in the popover.
   useEffect(() => {
-    if (!user || typeof window === 'undefined' || !('Notification' in window)) return undefined;
-    if (Notification.permission === 'default') {
-      const ask = () => { void Notification.requestPermission(); window.removeEventListener('pointerdown', ask); };
-      window.addEventListener('pointerdown', ask, { once: true });
-      return () => window.removeEventListener('pointerdown', ask);
-    }
-    return undefined;
+    if (!user || !pushSupported()) return undefined;
+    if (Notification.permission === 'granted') { void enablePush(user.id); return undefined; }
+    if (Notification.permission !== 'default') return undefined;
+    const ask = () => { void enablePush(user.id); window.removeEventListener('pointerdown', ask); };
+    window.addEventListener('pointerdown', ask, { once: true });
+    return () => window.removeEventListener('pointerdown', ask);
   }, [user]);
+
 
   const pushToOS = useCallback((list: Notification[]) => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
