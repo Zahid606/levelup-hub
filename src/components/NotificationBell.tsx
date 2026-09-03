@@ -41,19 +41,6 @@ export function NotificationBell() {
 
   const seenRef = useRef<Set<string> | null>(null);
 
-  // Register the device for background push (works when the site is closed or
-  // the phone is locked). Browsers require a user gesture, so we hook the first
-  // interaction and, failing that, offer an explicit button in the popover.
-  useEffect(() => {
-    if (!user || !pushSupported()) return undefined;
-    if (Notification.permission === 'granted') { void enablePush(user.id); return undefined; }
-    if (Notification.permission !== 'default') return undefined;
-    const ask = () => { void enablePush(user.id); window.removeEventListener('pointerdown', ask); };
-    window.addEventListener('pointerdown', ask, { once: true });
-    return () => window.removeEventListener('pointerdown', ask);
-  }, [user]);
-
-
   const pushToOS = useCallback((list: Notification[]) => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;

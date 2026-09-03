@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { enablePush, pushSupported } from '@/lib/push';
-
-const DISMISS_KEY = 'push-prompt-dismissed';
+import { enablePush, getPushState } from '@/lib/push';
 
 /**
  * Keeps this device registered for background Web Push and, when permission has
@@ -16,13 +14,20 @@ export function PushGate() {
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || !pushSupported()) return;
-    // Already allowed → make sure the subscription exists / is refreshed.
-    if (Notification.permission === 'granted') { void enablePush(user.id); return; }
-    if (Notification.permission === 'denied') return;
-    if (localStorage.getItem(DISMISS_KEY) === '1') return;
-    const timer = setTimeout(() => setShow(true), 1500);
-    return () => clearTimeout(timer);
+    if (!user) return;
+    let active = true;
+    let timer: number | undefined;
+    void getPushState(user.id).then((state) => {
+      if (!active) return;
+      // Repair an allowed-but-missing registration for existing students.
+      if (state === 'unregistered') { void enablePush(user.id); return; }
+      if (state !== 'default') return;
+      timer = window.setTimeout(() => setShow(true), 1500);
+    });
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
   }, [user]);
 
   if (!show || !user) return null;
@@ -62,9 +67,9 @@ export function PushGate() {
                 size="sm"
                 variant="ghost"
                 className="h-7 text-xs"
-                onClick={() => { localStorage.setItem(DISMISS_KEY, '1'); setShow(false); }}
+                onClick={() => setShow(false)}
               >
-                Not now
+                Don’t Allow
               </Button>
             </div>
           )}
