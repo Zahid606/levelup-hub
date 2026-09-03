@@ -50,15 +50,19 @@ export default function Messages() {
   const load = useCallback(async () => {
     if (!user) return;
     const [contactsRes, messagesRes] = await Promise.all([
-      supabase.rpc('get_message_contacts' as any),
+    const [contactsRes, messagesRes] = await Promise.all([
+      getMessageContacts().catch((e: unknown) => {
+        toast.error(`Could not load contacts: ${e instanceof Error ? e.message : 'unknown error'}`);
+        return [] as Contact[];
+      }),
       supabase
         .from('messages' as any)
         .select('*')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: true }),
     ]);
-    if (contactsRes.error) toast.error(`Could not load contacts: ${contactsRes.error.message}`);
-    setContacts(((contactsRes.data as any[]) || []) as Contact[]);
+    setContacts((contactsRes || []) as Contact[]);
+
     setMessages(((messagesRes.data as any[]) || []) as Message[]);
   }, [user]);
 
