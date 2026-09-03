@@ -887,22 +887,30 @@ export default function AdminPanel() {
                         <p className="text-xs text-muted-foreground">Lessons</p>
                       </div>
                       {isAdmin && getUserRole(student.user_id) === 'volunteer' && (
-                        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-pink-500/10 text-pink-500 px-2 py-0.5 text-[11px] font-semibold">
-                          <Heart className="h-3 w-3" /> Volunteer
+                        <span className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 text-pink-500 px-2 py-0.5 text-[11px] font-semibold">
+                          <Heart className="h-3 w-3 fill-current" /> Volunteer
                         </span>
                       )}
                       {isAdmin && getUserRole(student.user_id) !== 'admin' && getUserRole(student.user_id) !== 'manager' && (
                         <Button
-                          variant="ghost"
+                          variant={getUserRole(student.user_id) === 'volunteer' ? 'secondary' : 'outline'}
                           size="sm"
                           disabled={volunteerBusy === student.user_id}
                           onClick={() => toggleVolunteer(student.user_id, getUserRole(student.user_id) !== 'volunteer')}
                           title={getUserRole(student.user_id) === 'volunteer' ? 'Remove Volunteer' : 'Assign as Volunteer'}
-                          className={getUserRole(student.user_id) === 'volunteer' ? 'text-pink-500' : 'text-muted-foreground'}
+                          className={getUserRole(student.user_id) === 'volunteer' ? 'text-pink-500' : ''}
                         >
                           <Heart className={`h-4 w-4 ${getUserRole(student.user_id) === 'volunteer' ? 'fill-current' : ''}`} />
+                          <span className="hidden sm:inline ml-1">
+                            {volunteerBusy === student.user_id
+                              ? 'Saving…'
+                              : getUserRole(student.user_id) === 'volunteer'
+                                ? 'Remove Volunteer'
+                                : 'Assign as Volunteer'}
+                          </span>
                         </Button>
                       )}
+
                       {hasFullAccess && (
                         <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
                           <KeyRound className="h-4 w-4" />
