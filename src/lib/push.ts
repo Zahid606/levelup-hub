@@ -50,15 +50,24 @@ export async function enablePush(userId: string): Promise<PushStatus> {
         : await Notification.requestPermission();
     if (permission !== 'granted') return 'denied';
 
-    const registration = await navigator.serviceWorker.register('/push-sw.js');
+    const registration =
+      (await navigator.serviceWorker.getRegistration('/push-sw.js')) ??
+      (await navigator.serviceWorker.register('/push-sw.js', { scope: '/' }));
     await navigator.serviceWorker.ready;
 
-    const existing = await registration.pushManager.getSubscription();
+    const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource;
+    let existing = await registration.pushManager.getSubscription();
+    // A subscription created with a different VAPID key can never be delivered
+    // to, so drop it and re-subscribe with the current key.
+    if (existing && bufferToBase64Url(existing.options.applicationServerKey ?? null) !== VAPID_PUBLIC_KEY) {
+      try { await existing.unsubscribe(); } catch { /* ignore */ }
+      existing = null;
+    }
     const subscription =
       existing ??
       (await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+        applicationServerKey: appServerKey,
       }));
 
     const p256dh = bufferToBase64Url(subscription.getKey('p256dh'));
