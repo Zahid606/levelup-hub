@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings, Bell, BellOff, CircleCheck, ExternalLink } from 'lucide-react';
+import { Settings, Bell, BellOff, CircleCheck, ExternalLink, MapPin, MapPinOff } from 'lucide-react';
 import { disablePush, enablePush, getPushState, type PushPermissionState } from '@/lib/push';
+import { getGeoState, requestGeoPermission, watchGeoState, type GeoPermissionState } from '@/lib/geo';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
