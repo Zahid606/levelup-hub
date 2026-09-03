@@ -50,7 +50,7 @@ export default function Messages() {
   const load = useCallback(async () => {
     if (!user) return;
     const [contactsRes, messagesRes] = await Promise.all([
-    const [contactsRes, messagesRes] = await Promise.all([
+
       getMessageContacts().catch((e: unknown) => {
         toast.error(`Could not load contacts: ${e instanceof Error ? e.message : 'unknown error'}`);
         return [] as Contact[];
