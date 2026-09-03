@@ -112,6 +112,7 @@ export default function AdminPanel() {
     setStudentMetricsLoaded(false);
     setStaffLoaded(false);
     setGiftsLoaded(false);
+    if (hasFullAccess) void loadStaffData(true);
   }
 
   async function loadStudentMetrics(force = false) {
