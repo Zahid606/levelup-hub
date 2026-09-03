@@ -22,6 +22,7 @@ import { staffCreateUser } from '@/lib/staffCreateUser.functions';
 import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
 import { adminResetPassword } from '@/lib/adminResetPassword.functions';
 import { sendPushToStudents } from '@/lib/pushNotify.functions';
+import { setVolunteerRole } from '@/lib/volunteerRole.functions';
 
 // xlsx + file-saver are loaded on-demand inside the export handler to keep the
 // initial admin bundle small.
@@ -145,7 +146,7 @@ export default function AdminPanel() {
   }
 
   const handleTabChange = (value: string) => {
-    if (value === 'students' || value === 'analytics') void loadStudentMetrics();
+    if (value === 'students' || value === 'analytics') { void loadStudentMetrics(); void loadStaffData(); }
     if (value === 'staff') void loadStaffData();
     if (value === 'gifts') void loadGiftsData();
   };
@@ -299,6 +300,22 @@ export default function AdminPanel() {
     }
     toast.success('Student account created!');
     setNewStudent({ email: '', password: '', full_name: '' }); setDialogOpen(''); loadAll();
+  };
+
+  const [volunteerBusy, setVolunteerBusy] = useState<string | null>(null);
+
+  const toggleVolunteer = async (userId: string, makeVolunteer: boolean) => {
+    if (!isAdmin) { toast.error('Only administrators can change volunteer status'); return; }
+    setVolunteerBusy(userId);
+    try {
+      await setVolunteerRole({ data: { user_id: userId, volunteer: makeVolunteer } });
+      toast.success(makeVolunteer ? 'Assigned as Volunteer' : 'Volunteer access removed');
+      await loadStaffData(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setVolunteerBusy(null);
+    }
   };
 
   const deleteStudent = async (userId: string) => {
@@ -866,6 +883,23 @@ export default function AdminPanel() {
                         <p className="font-bold">{getStudentProgress(student.user_id)}/{lessons.length}</p>
                         <p className="text-xs text-muted-foreground">Lessons</p>
                       </div>
+                      {isAdmin && getUserRole(student.user_id) === 'volunteer' && (
+                        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-pink-500/10 text-pink-500 px-2 py-0.5 text-[11px] font-semibold">
+                          <Heart className="h-3 w-3" /> Volunteer
+                        </span>
+                      )}
+                      {isAdmin && getUserRole(student.user_id) !== 'admin' && getUserRole(student.user_id) !== 'manager' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={volunteerBusy === student.user_id}
+                          onClick={() => toggleVolunteer(student.user_id, getUserRole(student.user_id) !== 'volunteer')}
+                          title={getUserRole(student.user_id) === 'volunteer' ? 'Remove Volunteer' : 'Assign as Volunteer'}
+                          className={getUserRole(student.user_id) === 'volunteer' ? 'text-pink-500' : 'text-muted-foreground'}
+                        >
+                          <Heart className={`h-4 w-4 ${getUserRole(student.user_id) === 'volunteer' ? 'fill-current' : ''}`} />
+                        </Button>
+                      )}
                       {hasFullAccess && (
                         <Button variant="ghost" size="sm" onClick={() => setResetPasswordStudent(student)} title="Reset Password">
                           <KeyRound className="h-4 w-4" />
