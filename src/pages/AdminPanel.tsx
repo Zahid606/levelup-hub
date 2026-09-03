@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -9,18 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import VolunteerWorkspace from '@/components/VolunteerWorkspace';
+const VolunteerWorkspace = lazy(() => import('@/components/VolunteerWorkspace'));
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Plus, Trash2, Video, HelpCircle, Gift, UserPlus, Search, Pencil, PieChart, Eye, EyeOff, KeyRound, Download, Shield, ShieldCheck, Heart, Filter, Star, Crown } from 'lucide-react';
-import { AdminAnalytics } from '@/components/AdminAnalytics';
-import { StudentActivityLog } from '@/components/StudentActivityLog';
+const AdminAnalytics = lazy(() => import('@/components/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const StudentActivityLog = lazy(() => import('@/components/StudentActivityLog').then(m => ({ default: m.StudentActivityLog })));
 import { LessonVideoManager } from '@/components/LessonVideoManager';
 import { staffCreateUser } from '@/lib/staffCreateUser.functions';
 import { staffDeleteUser } from '@/lib/staffDeleteUser.functions';
 import { adminResetPassword } from '@/lib/adminResetPassword.functions';
+import { sendPushToStudents } from '@/lib/pushNotify.functions';
+
 // xlsx + file-saver are loaded on-demand inside the export handler to keep the
 // initial admin bundle small.
 
@@ -329,8 +331,32 @@ export default function AdminPanel() {
 
   const togglePublish = async (id: string, current: boolean) => {
     if (!canManageContent) { toast.error('You do not have permission to publish lessons'); return; }
-    await supabase.from('lessons').update({ is_published: !current }).eq('id', id); loadAll();
+    const { error } = await supabase.from('lessons').update({ is_published: !current }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    // Only after the lesson is confirmed published, push it to students' devices.
+    if (!current) {
+      const lesson = lessons.find(l => l.id === id);
+      const title = lesson?.title || 'New lesson';
+      try {
+        const res = await sendPushToStudents({
+          data: {
+            title: '🔔 New Lesson Available',
+            body: `${title} is ready to watch.`,
+            url: `/lesson/${id}`,
+            tag: `lesson:${id}`,
+          },
+        });
+        toast.success(`Lesson published — notified ${res.sent} device(s)`);
+      } catch (err) {
+        console.error(err);
+        toast.success('Lesson published (in-app notifications sent)');
+      }
+    } else {
+      toast.success('Lesson unpublished');
+    }
+    loadAll();
   };
+
 
   const getStudentPoints = (userId: string) => allPoints.filter(p => p.user_id === userId).reduce((sum, p) => sum + p.points, 0);
   const getStudentProgress = (userId: string) => allProgress.filter(p => p.user_id === userId && p.completed).length;
@@ -448,7 +474,7 @@ export default function AdminPanel() {
 
           {/* VOLUNTEERS TAB */}
           <TabsContent value="volunteers" className="space-y-4">
-            <VolunteerWorkspace hasFullAccess={hasFullAccess} />
+            <Suspense fallback={<p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>}><VolunteerWorkspace hasFullAccess={hasFullAccess} /></Suspense>
           </TabsContent>
 
 
@@ -908,8 +934,8 @@ export default function AdminPanel() {
 
           {/* ANALYTICS TAB */}
           <TabsContent value="analytics" className="space-y-6">
-            <AdminAnalytics students={students} allProgress={allProgress} allPoints={allPoints} lessons={lessons} quizAnswers={quizAnswers} />
-            <StudentActivityLog students={students} quizAnswers={quizAnswers} allProgress={allProgress} allPoints={allPoints} lessons={lessons} />
+            <Suspense fallback={<p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>}><AdminAnalytics students={students} allProgress={allProgress} allPoints={allPoints} lessons={lessons} quizAnswers={quizAnswers} /></Suspense>
+            <Suspense fallback={null}><StudentActivityLog students={students} quizAnswers={quizAnswers} allProgress={allProgress} allPoints={allPoints} lessons={lessons} /></Suspense>
           </TabsContent>
 
           {/* GIFTS TAB */}

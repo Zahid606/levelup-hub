@@ -19,8 +19,11 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    // Warm route chunks on hover/touch so navigation feels instant.
+    defaultPreload: "intent",
+    defaultPreloadStaleTime: 30_000,
   });
+
 
   return router;
 };

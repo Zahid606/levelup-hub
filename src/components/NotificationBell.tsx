@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { enablePush, pushSupported } from '@/lib/push';
+
 
 type Notification = {
   id: string;
@@ -35,19 +37,22 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+
   const seenRef = useRef<Set<string> | null>(null);
 
-  // Ask once for OS-level notification permission (works on Android/desktop
-  // even when the tab is in the background or the screen is locked).
+  // Register the device for background push (works when the site is closed or
+  // the phone is locked). Browsers require a user gesture, so we hook the first
+  // interaction and, failing that, offer an explicit button in the popover.
   useEffect(() => {
-    if (!user || typeof window === 'undefined' || !('Notification' in window)) return undefined;
-    if (Notification.permission === 'default') {
-      const ask = () => { void Notification.requestPermission(); window.removeEventListener('pointerdown', ask); };
-      window.addEventListener('pointerdown', ask, { once: true });
-      return () => window.removeEventListener('pointerdown', ask);
-    }
-    return undefined;
+    if (!user || !pushSupported()) return undefined;
+    if (Notification.permission === 'granted') { void enablePush(user.id); return undefined; }
+    if (Notification.permission !== 'default') return undefined;
+    const ask = () => { void enablePush(user.id); window.removeEventListener('pointerdown', ask); };
+    window.addEventListener('pointerdown', ask, { once: true });
+    return () => window.removeEventListener('pointerdown', ask);
   }, [user]);
+
 
   const pushToOS = useCallback((list: Notification[]) => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -100,13 +105,17 @@ export function NotificationBell() {
     return () => { void supabase.removeChannel(channel); };
   }, [user, load]);
 
-  // Fallback polling (mobile browsers can drop websockets in background)
+  // Fallback polling — only while the tab is visible, so background tabs and
+  // phones stay idle (push handles closed-app delivery).
   useEffect(() => {
-    const id = setInterval(() => { void load(); }, 60_000);
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, 120_000);
     const onVisible = () => { if (document.visibilityState === 'visible') void load(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
   }, [load]);
+
 
   const unread = items.filter(n => !n.read_at).length;
 
@@ -151,6 +160,28 @@ export function NotificationBell() {
             </Button>
           )}
         </div>
+        {pushSupported() && typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
+          <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">Get new lesson alerts on this device</p>
+            <Button
+              size="sm"
+              className="h-7 text-xs gradient-primary text-primary-foreground shrink-0"
+              onClick={async () => {
+                const status = await enablePush(user.id);
+                setPushMsg(
+                  status === 'subscribed' ? 'Notifications enabled!'
+                  : status === 'open-in-new-tab' ? 'Open the site in its own tab to enable.'
+                  : status === 'denied' ? 'Allow notifications in your browser settings.'
+                  : 'Notifications are not supported on this device.',
+                );
+              }}
+            >
+              Enable
+            </Button>
+          </div>
+        )}
+        {pushMsg && <p className="px-3 py-2 text-xs text-muted-foreground border-b border-border/60">{pushMsg}</p>}
+
         <ScrollArea className="max-h-[60vh]">
           {items.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
