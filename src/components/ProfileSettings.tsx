@@ -4,11 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings, Bell } from 'lucide-react';
-import { enablePush, disablePush, isPushEnabled, pushSupported } from '@/lib/push';
+import { Settings, Bell, BellOff, CircleCheck, ExternalLink } from 'lucide-react';
+import { disablePush, enablePush, getPushState, type PushPermissionState } from '@/lib/push';
 
 const COUNTRIES = ['Pakistan', 'India', 'Bangladesh', 'Saudi Arabia', 'UAE', 'UK', 'USA', 'Canada', 'Australia', 'Malaysia', 'Turkey', 'Egypt', 'Indonesia', 'South Africa', 'Other'];
 
@@ -24,13 +24,20 @@ export function ProfileSettings() {
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [loading, setLoading] = useState(false);
-  const [pushOn, setPushOn] = useState(false);
+  const [pushState, setPushState] = useState<PushPermissionState>('unsupported');
   const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    void isPushEnabled().then(setPushOn);
-  }, [open]);
+    if (!open || !user) return;
+    const refresh = () => { void getPushState(user.id).then(setPushState); };
+    refresh();
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [open, user]);
 
   const togglePush = async (next: boolean) => {
     if (!user) return;
@@ -38,20 +45,32 @@ export function ProfileSettings() {
     if (next) {
       const status = await enablePush(user.id);
       setPushBusy(false);
-      if (status === 'subscribed') { setPushOn(true); toast.success('Notifications enabled on this device'); return; }
+      if (status === 'subscribed') { setPushState('enabled'); toast.success('Push notifications enabled on this device'); return; }
       toast.error(
         status === 'open-in-new-tab' ? 'Open the site in its own browser tab, then try again'
         : status === 'denied' ? 'Allow notifications in your browser settings'
-        : 'This device does not support push notifications',
+        : status === 'unsupported' ? 'This browser or device does not support push notifications'
+        : 'Could not register this device. Please try again.',
       );
-      setPushOn(false);
+      setPushState(status === 'denied' ? 'denied' : status === 'unsupported' ? 'unsupported' : 'unregistered');
       return;
     }
     await disablePush();
     setPushBusy(false);
-    setPushOn(false);
-    toast.success('Notifications turned off for this device');
+    setPushState(Notification.permission === 'denied' ? 'denied' : 'unregistered');
+    toast.success('Push notifications turned off on this device');
   };
+
+  const pushOn = pushState === 'enabled';
+  const pushDescription = pushState === 'enabled'
+    ? 'On — this device is registered for lesson alerts.'
+    : pushState === 'default'
+      ? 'Choose Allow Notifications to receive lesson alerts on this device.'
+      : pushState === 'denied'
+        ? 'Blocked by your browser. Open this site’s permissions, set Notifications to Allow, then return here.'
+        : pushState === 'unregistered'
+          ? 'Permission is allowed, but this device is not registered. Turn notifications on to repair it.'
+          : 'Push notifications are unavailable in this browser. On iPhone or iPad, add the site to your Home Screen and open it there.';
 
 
   useEffect(() => {
@@ -82,7 +101,10 @@ export function ProfileSettings() {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Student Settings</DialogTitle>
+          <DialogDescription>Manage your profile and this device’s notifications.</DialogDescription>
+        </DialogHeader>
         <div className="space-y-3">
           <Select value={country} onValueChange={v => { setCountry(v); if (v !== 'Saudi Arabia') setCity(''); }}>
             <SelectTrigger><SelectValue placeholder="Select Country" /></SelectTrigger>
@@ -104,24 +126,41 @@ export function ProfileSettings() {
             Save Changes
           </Button>
 
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <div className="flex items-center justify-between gap-3">
             <div className="flex items-start gap-2 min-w-0">
-              <Bell className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              {pushOn
+                ? <CircleCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                : <BellOff className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
               <div className="min-w-0">
-                <p className="text-sm font-medium">Notifications</p>
-                <p className="text-xs text-muted-foreground">
-                  {pushSupported()
-                    ? 'Get new lesson alerts even when the app is closed.'
-                    : 'Not supported on this device or browser.'}
-                </p>
+                <p className="text-sm font-medium">Push Notifications</p>
+                <p className="text-xs text-muted-foreground">{pushDescription}</p>
               </div>
             </div>
-            <Switch
-              checked={pushOn}
-              disabled={pushBusy || !pushSupported()}
-              onCheckedChange={(v) => { void togglePush(v); }}
-              aria-label="Push notifications"
-            />
+            {pushState !== 'default' && (
+              <Switch
+                checked={pushOn}
+                disabled={pushBusy || pushState === 'unsupported' || pushState === 'denied'}
+                onCheckedChange={(v) => { void togglePush(v); }}
+                aria-label="Push notifications"
+              />
+            )}
+            </div>
+            {pushState === 'default' && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="button" size="sm" disabled={pushBusy} onClick={() => { void togglePush(true); }}>
+                  <Bell className="h-4 w-4" /> Allow Notifications
+                </Button>
+                <Button type="button" size="sm" variant="outline" disabled={pushBusy} onClick={() => toast.info('Notifications remain off. You can allow them here at any time.')}>
+                  Don’t Allow
+                </Button>
+              </div>
+            )}
+            {pushState === 'denied' && (
+              <Button type="button" size="sm" variant="outline" onClick={() => toast.info('Use the lock or site-info icon beside the address bar, open Site settings, and change Notifications to Allow.')}>
+                <ExternalLink className="h-4 w-4" /> How to enable
+              </Button>
+            )}
           </div>
 
         </div>
