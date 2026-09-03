@@ -103,13 +103,17 @@ export function NotificationBell() {
     return () => { void supabase.removeChannel(channel); };
   }, [user, load]);
 
-  // Fallback polling (mobile browsers can drop websockets in background)
+  // Fallback polling — only while the tab is visible, so background tabs and
+  // phones stay idle (push handles closed-app delivery).
   useEffect(() => {
-    const id = setInterval(() => { void load(); }, 60_000);
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, 120_000);
     const onVisible = () => { if (document.visibilityState === 'visible') void load(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
   }, [load]);
+
 
   const unread = items.filter(n => !n.read_at).length;
 
