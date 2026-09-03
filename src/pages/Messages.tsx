@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getMessageContacts } from '@/lib/messageContacts.functions';
+
 import { TopBar } from '@/components/TopBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,15 +52,19 @@ export default function Messages() {
   const load = useCallback(async () => {
     if (!user) return;
     const [contactsRes, messagesRes] = await Promise.all([
-      supabase.rpc('get_message_contacts' as any),
+
+      getMessageContacts().catch((e: unknown) => {
+        toast.error(`Could not load contacts: ${e instanceof Error ? e.message : 'unknown error'}`);
+        return [] as Contact[];
+      }),
       supabase
         .from('messages' as any)
         .select('*')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: true }),
     ]);
-    if (contactsRes.error) toast.error(`Could not load contacts: ${contactsRes.error.message}`);
-    setContacts(((contactsRes.data as any[]) || []) as Contact[]);
+    setContacts((contactsRes || []) as Contact[]);
+
     setMessages(((messagesRes.data as any[]) || []) as Message[]);
   }, [user]);
 

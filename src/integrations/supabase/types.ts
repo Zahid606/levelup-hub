@@ -777,16 +777,6 @@ export type Database = {
           total_points: number
         }[]
       }
-      get_volunteer_dashboard_summary: {
-        Args: { _volunteer_id: string }
-        Returns: {
-          inactive_students: number
-          new_feedback: number
-          open_questions: number
-          open_reports: number
-          student_count: number
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
