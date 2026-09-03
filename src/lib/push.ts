@@ -91,3 +91,31 @@ export async function enablePush(userId: string): Promise<PushStatus> {
     return 'error';
   }
 }
+
+/** True when this device currently has an active push subscription. */
+export async function isPushEnabled(): Promise<boolean> {
+  if (!pushSupported() || Notification.permission !== 'granted') return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration('/push-sw.js');
+    if (!registration) return false;
+    const sub = await registration.pushManager.getSubscription();
+    return !!sub;
+  } catch {
+    return false;
+  }
+}
+
+/** Turns off push for this device and forgets the stored subscription. */
+export async function disablePush(): Promise<void> {
+  if (!pushSupported()) return;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration('/push-sw.js');
+    const sub = await registration?.pushManager.getSubscription();
+    if (sub) {
+      await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+      await sub.unsubscribe();
+    }
+  } catch (err) {
+    console.error('push disable failed', err);
+  }
+}
