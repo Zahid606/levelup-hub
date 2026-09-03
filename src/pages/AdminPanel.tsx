@@ -364,7 +364,9 @@ export default function AdminPanel() {
             tag: `lesson:${id}`,
           },
         });
-        toast.success(`Lesson published — notified ${res.sent} device(s)`);
+        toast.success(res.sent > 0
+          ? `Lesson published — notified ${res.sent} device(s)`
+          : 'Lesson published — in-app alerts sent (no students have enabled phone notifications yet)');
       } catch (err) {
         console.error(err);
         toast.success('Lesson published (in-app notifications sent)');
