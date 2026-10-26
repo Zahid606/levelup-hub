@@ -365,7 +365,7 @@ export default function VolunteerWorkspace({ hasFullAccess }: { hasFullAccess: b
       </div>
 
       <Tabs defaultValue={hasFullAccess ? 'assign' : 'students'}>
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex flex-wrap h-auto rounded-2xl">
           {hasFullAccess && <TabsTrigger value="assign">Volunteers</TabsTrigger>}
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="submit">{hasFullAccess ? 'All Reports' : 'Submit Report'}</TabsTrigger>
