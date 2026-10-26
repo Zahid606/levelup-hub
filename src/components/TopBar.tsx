@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { t, languageNames, type Language } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen, MessageSquare } from 'lucide-react';
 import { Link, useNavigate } from '@/lib/router-compat';
 import { ProfileSettings } from '@/components/ProfileSettings';
@@ -68,11 +67,26 @@ export function TopBar() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1">
-            <Sun className="h-3 w-3 text-muted-foreground" />
-            <Switch checked={darkMode} onCheckedChange={setDarkMode} className="h-4 w-8 data-[state=checked]:bg-primary [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-4" />
-            <Moon className="h-3 w-3 text-muted-foreground" />
-          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={darkMode}
+            aria-label="Toggle dark mode"
+            onClick={() => setDarkMode(!darkMode)}
+            className={`relative h-7 w-14 shrink-0 rounded-full border transition-colors duration-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              darkMode ? 'border-indigo-400/40 bg-indigo-950' : 'border-amber-300/60 bg-sky-200'
+            }`}
+          >
+            <Sun className={`absolute left-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-500 transition-opacity duration-300 ${darkMode ? 'opacity-40' : 'opacity-0'}`} />
+            <Moon className={`absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-indigo-200 transition-opacity duration-300 ${darkMode ? 'opacity-0' : 'opacity-40'}`} />
+            <span
+              className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-300 ${
+                darkMode ? 'left-[1.75rem] bg-slate-800 text-indigo-200' : 'left-0.5 bg-white text-amber-500'
+              }`}
+            >
+              {darkMode ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+            </span>
+          </button>
 
           {user && (
             <>
