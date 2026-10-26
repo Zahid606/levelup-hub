@@ -66,10 +66,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full gradient-primary opacity-10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full gradient-accent opacity-10 blur-3xl" />
-      </div>
       
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
         <CardHeader className="text-center space-y-3">
@@ -118,7 +114,7 @@ export default function Login() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
-            <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {isSignup ? t('auth.signup', language) : t('auth.login', language)}
             </Button>
           </form>

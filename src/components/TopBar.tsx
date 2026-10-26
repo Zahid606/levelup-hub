@@ -20,33 +20,33 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass-card border-b border-border/50">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover ring-2 ring-accent/50" />
+          <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover ring-1 ring-border" />
           <span className="hidden md:inline text-sm font-semibold text-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</span>
         </Link>
 
         {user && (
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <nav className="hidden md:flex items-center gap-1">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-full px-3 py-1.5">
               {t('nav.lessons', language)}
             </Link>
-            <Link to="/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              <Trophy className="h-4 w-4" />
+            <Link to="/leaderboard" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
+              <Trophy className="h-3.5 w-3.5" />
               {t('nav.leaderboard', language)}
             </Link>
-            <Link to="/messages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
+            <Link to="/messages" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
               {t('nav.messages', language)}
             </Link>
-            <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              <Mail className="h-4 w-4" />
+            <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
+              <Mail className="h-3.5 w-3.5" />
               {t('nav.contact', language)}
             </Link>
             {(isAdmin || isManager || isEmployee || isVolunteer) && (
-              <Link to="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-                <Shield className="h-4 w-4" />
+              <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
+                <Shield className="h-3.5 w-3.5" />
                 {t('nav.admin', language)}
               </Link>
             )}
@@ -109,20 +109,20 @@ export function TopBar() {
             {t('nav.lessons', language)}
           </Link>
           <Link to="/leaderboard" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-            <Trophy className="h-4 w-4" />
+            <Trophy className="h-3.5 w-3.5" />
             {t('nav.leaderboard', language)}
           </Link>
           <Link to="/messages" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-3.5 w-3.5" />
             {t('nav.messages', language)}
           </Link>
           <Link to="/contact" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-            <Mail className="h-4 w-4" />
+            <Mail className="h-3.5 w-3.5" />
             {t('nav.contact', language)}
           </Link>
           {(isAdmin || isManager || isEmployee || isVolunteer) && (
             <Link to="/admin" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-              <Shield className="h-4 w-4" />
+              <Shield className="h-3.5 w-3.5" />
               {t('nav.admin', language)}
             </Link>
           )}

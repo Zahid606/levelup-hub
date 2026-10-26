@@ -80,39 +80,39 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
-      <main className="container py-8 space-y-8">
+      <main className="container max-w-6xl py-10 space-y-10">
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up">
           <Card className="glass-card">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="gradient-primary rounded-xl p-3">
-                <Star className="h-6 w-6 text-primary-foreground" />
+              <div className="bg-primary/10 rounded-full p-3">
+                <Star className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('points.total', language)}</p>
-                <p className="text-3xl font-heading font-bold">{totalPoints}</p>
+                <p className="text-3xl font-heading font-semibold tracking-tight">{totalPoints}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="glass-card">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="gradient-accent rounded-xl p-3">
-                <Trophy className="h-6 w-6 text-accent-foreground" />
+              <div className="bg-accent/10 rounded-full p-3">
+                <Trophy className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('admin.progress', language)}</p>
-                <p className="text-3xl font-heading font-bold">{completedCount}/{lessons.length}</p>
+                <p className="text-3xl font-heading font-semibold tracking-tight">{completedCount}/{lessons.length}</p>
               </div>
             </CardContent>
           </Card>
           <Card className="glass-card">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="bg-secondary rounded-xl p-3 border border-border">
-                <Gift className="h-6 w-6 text-accent" />
+              <div className="bg-secondary rounded-full p-3">
+                <Gift className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('general.gifts', language)}</p>
-                <p className="text-3xl font-heading font-bold">{giftCount}</p>
+                <p className="text-3xl font-heading font-semibold tracking-tight">{giftCount}</p>
               </div>
             </CardContent>
           </Card>
@@ -125,14 +125,14 @@ export default function StudentDashboard() {
               <span className="text-sm font-medium">{t('admin.progress', language)}</span>
               <span className="text-sm text-muted-foreground">{Math.round(progressPercent)}%</span>
             </div>
-            <Progress value={progressPercent} className="h-3" />
+            <Progress value={progressPercent} className="h-1.5" />
           </CardContent>
         </Card>
 
         {/* Lessons Grid */}
         <div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-            <h2 className="text-2xl font-heading font-bold">{t('lessons.title', language)}</h2>
+            <h2 className="text-xl font-heading font-semibold">{t('lessons.title', language)}</h2>
             <div className="relative md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder={t('general.search', language)} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -144,11 +144,11 @@ export default function StudentDashboard() {
               const lessonNum = lesson.lesson_number ?? (i + 1);
               return (
                 <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
-                  <Card className={`glass-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer ${isCompleted ? 'border-primary/30' : ''}`}
+                  <Card className={`glass-card transition-colors duration-200 hover:border-primary/40 group cursor-pointer ${isCompleted ? 'border-primary/30' : ''}`}
                     style={{ animationDelay: `${i * 100}ms` }}>
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-3">
-                        <div className={`rounded-xl p-2 ${isCompleted ? 'gradient-primary' : 'bg-secondary'}`}>
+                        <div className={`rounded-full p-2 ${isCompleted ? 'bg-primary' : 'bg-secondary'}`}>
                           {isCompleted ? <CheckCircle2 className="h-5 w-5 text-primary-foreground" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
                         </div>
                         <span className="text-xs font-medium text-muted-foreground">
@@ -160,7 +160,7 @@ export default function StudentDashboard() {
                       </h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">{getLessonDesc(lesson)}</p>
                       <div className="mt-4">
-                        <Button variant={isCompleted ? "secondary" : "default"} size="sm" className={!isCompleted ? 'gradient-primary text-primary-foreground' : ''}>
+                        <Button variant={isCompleted ? "secondary" : "default"} size="sm" >
                           {isCompleted ? t('lessons.completed', language) : t('lessons.start', language)}
                         </Button>
                       </div>
@@ -181,7 +181,7 @@ export default function StudentDashboard() {
         {/* Gifts Section */}
         {gifts.length > 0 && (
           <div>
-            <h2 className="text-2xl font-heading font-bold mb-4">{t('general.gifts', language)} 🎁</h2>
+            <h2 className="text-xl font-heading font-semibold mb-4">{t('general.gifts', language)} 🎁</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {gifts.map(gift => (
                 <Card key={gift.id} className="glass-card border-accent/20">

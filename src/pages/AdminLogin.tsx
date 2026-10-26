@@ -42,9 +42,6 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full gradient-accent opacity-10 blur-3xl" />
-      </div>
       
       <Card className="w-full max-w-md glass-card animate-scale-in relative">
         <CardHeader className="text-center space-y-3">
