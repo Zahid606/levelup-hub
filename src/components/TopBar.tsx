@@ -20,10 +20,10 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-card/70 backdrop-blur-xl backdrop-saturate-150">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover ring-1 ring-border" />
+          <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover " />
           <span className="hidden md:inline text-sm font-semibold text-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</span>
         </Link>
 
@@ -74,14 +74,14 @@ export function TopBar() {
             aria-label="Toggle dark mode"
             onClick={() => setDarkMode(!darkMode)}
             className={`relative h-7 w-14 shrink-0 rounded-full border transition-colors duration-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-              darkMode ? 'border-indigo-400/40 bg-indigo-950' : 'border-amber-300/60 bg-sky-200'
+              darkMode ? 'border-transparent bg-accent' : 'border-transparent bg-foreground/15'
             }`}
           >
-            <Sun className={`absolute left-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-500 transition-opacity duration-300 ${darkMode ? 'opacity-40' : 'opacity-0'}`} />
-            <Moon className={`absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-indigo-200 transition-opacity duration-300 ${darkMode ? 'opacity-0' : 'opacity-40'}`} />
+            <Sun className={`absolute left-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white transition-opacity duration-300 ${darkMode ? 'opacity-40' : 'opacity-0'}`} />
+            <Moon className={`absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-foreground/50 transition-opacity duration-300 ${darkMode ? 'opacity-0' : 'opacity-40'}`} />
             <span
               className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-300 ${
-                darkMode ? 'left-[1.75rem] bg-slate-800 text-indigo-200' : 'left-0.5 bg-white text-amber-500'
+                darkMode ? 'left-[1.75rem] bg-white text-neutral-900' : 'left-0.5 bg-white text-neutral-900'
               }`}
             >
               {darkMode ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}

@@ -85,8 +85,8 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up">
           <Card className="glass-card">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="bg-primary/10 rounded-full p-3">
-                <Star className="h-5 w-5 text-primary" />
+              <div className="bg-accent/10 rounded-full p-3">
+                <Star className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t('points.total', language)}</p>
@@ -144,12 +144,12 @@ export default function StudentDashboard() {
               const lessonNum = lesson.lesson_number ?? (i + 1);
               return (
                 <Link key={lesson.id} to={`/lesson/${lesson.id}`}>
-                  <Card className={`glass-card transition-colors duration-200 hover:border-primary/40 group cursor-pointer ${isCompleted ? 'border-primary/30' : ''}`}
+                  <Card className={`glass-card transition-all duration-300 ease-out hover:bg-card/60 group cursor-pointer `}
                     style={{ animationDelay: `${i * 100}ms` }}>
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-3">
-                        <div className={`rounded-full p-2 ${isCompleted ? 'bg-primary' : 'bg-secondary'}`}>
-                          {isCompleted ? <CheckCircle2 className="h-5 w-5 text-primary-foreground" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
+                        <div className={`rounded-full p-2 ${isCompleted ? 'bg-accent' : 'bg-secondary'}`}>
+                          {isCompleted ? <CheckCircle2 className="h-5 w-5 text-accent-foreground" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
                         </div>
                         <span className="text-xs font-medium text-muted-foreground">
                           {t('lessons.lesson', language)} {lessonNum}
