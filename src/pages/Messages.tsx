@@ -10,8 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { MessageSquare, Send, Trash2, ArrowLeft, Search, Check, CheckCheck, Copy, ExternalLink, Wrench } from 'lucide-react';
-import setupSql from '../../supabase/migrations/20261028120000_message_contacts_for_authenticated.sql?raw';
+import { MessageSquare, Send, Trash2, ArrowLeft, Search, Check, CheckCheck } from 'lucide-react';
 
 type Contact = { user_id: string; full_name: string | null; role: string };
 type Message = {
@@ -36,57 +35,6 @@ function dayLabel(iso: string) {
     return w === 1 ? 'Last week' : `${w} weeks ago`;
   }
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-/** Errors that mean the one-time database setup has not been run yet. */
-const SETUP_ERROR = /permission denied|does not exist|could not find the function|missing supabase environment/i;
-
-function SetupCard({ detail }: { detail: string }) {
-  const projectId = import.meta.env['VITE_SUPABASE_PROJECT_ID'] as string | undefined;
-  const editorUrl = projectId
-    ? `https://supabase.com/dashboard/project/${projectId}/sql/new`
-    : 'https://supabase.com/dashboard';
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(setupSql);
-      toast.success('Setup SQL copied. Paste it into the Supabase SQL Editor and press Run.');
-    } catch {
-      toast.error('Could not copy automatically. Select the SQL below and copy it.');
-    }
-  }
-
-  return (
-    <Card className="glass-card mb-4">
-      <CardContent className="p-5 space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="rounded-full bg-accent/10 p-2.5"><Wrench className="h-5 w-5 text-accent" /></div>
-          <div>
-            <h2 className="font-heading font-semibold">Messaging needs a one-time setup</h2>
-            <p className="text-sm text-muted-foreground">
-              An admin needs to run a short setup script in Supabase once. After that, students and admins can message each other.
-            </p>
-          </div>
-        </div>
-        <ol className="text-sm space-y-1 list-decimal pl-5 text-muted-foreground">
-          <li>Press <span className="text-foreground font-medium">Copy setup SQL</span>.</li>
-          <li>Press <span className="text-foreground font-medium">Open Supabase SQL Editor</span> and sign in.</li>
-          <li>Paste the SQL and press <span className="text-foreground font-medium">Run</span>, then come back and press <span className="text-foreground font-medium">Check again</span>.</li>
-        </ol>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => void copy()}><Copy className="h-4 w-4" /> Copy setup SQL</Button>
-          <Button variant="outline" asChild>
-            <a href={editorUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /> Open Supabase SQL Editor</a>
-          </Button>
-        </div>
-        <details className="text-xs text-muted-foreground">
-          <summary className="cursor-pointer">Technical details</summary>
-          <p className="mt-2 break-words">{detail}</p>
-          <pre className="mt-2 max-h-48 overflow-auto rounded-xl bg-secondary p-3 text-[11px] leading-snug">{setupSql}</pre>
-        </details>
-      </CardContent>
-    </Card>
-  );
 }
 
 function initials(name: string | null) {
@@ -284,13 +232,6 @@ export default function Messages() {
           <MessageSquare className="h-6 w-6 text-accent" /> Messages
         </h1>
 
-        {contactsError && SETUP_ERROR.test(contactsError) && (
-          <>
-            <SetupCard detail={contactsError} />
-            <div className="mb-4"><Button variant="outline" size="sm" onClick={() => void loadContacts()}>Check again</Button></div>
-          </>
-        )}
-
         <div className="grid md:grid-cols-[300px_1fr] gap-4">
           {/* Conversation list — hidden on mobile while a chat is open */}
           <Card className={`glass-card ${active ? 'hidden md:block' : ''}`}>
@@ -300,9 +241,9 @@ export default function Messages() {
                 <Input placeholder="Search people…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
               </div>
               <div className="max-h-[62vh] overflow-y-auto space-y-0.5">
-                {contactsError && !SETUP_ERROR.test(contactsError) && (
+                {contactsError && (
                   <div className="p-3 space-y-2">
-                    <p className="text-sm text-destructive break-words">Could not load contacts: {contactsError}</p>
+                    <p className="text-sm text-muted-foreground">Messaging is temporarily unavailable. Please try again in a moment.</p>
                     <Button size="sm" variant="outline" onClick={() => void loadContacts()}>Retry</Button>
                   </div>
                 )}
