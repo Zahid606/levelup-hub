@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { enablePush, pushSupported } from '@/lib/push';
+import { toast } from 'sonner';
 
 
 type Notification = {
@@ -70,10 +71,22 @@ export function NotificationBell() {
       seenRef.current = new Set(list.map(n => n.id)); // don't re-announce on first load
     } else {
       pushToOS(list);
+      // New chat message while the person is on another page: show a small pop-up they can tap.
+      if (typeof window !== 'undefined' && window.location.pathname !== '/messages') {
+        list
+          .filter(n => n.type === 'message' && !n.read_at && !seenRef.current?.has(n.id))
+          .slice(0, 2)
+          .forEach(n =>
+            toast(n.title, {
+              description: n.message || undefined,
+              action: { label: 'Open', onClick: () => navigate(n.link || '/messages') },
+            }),
+          );
+      }
       list.forEach(n => seenRef.current?.add(n.id));
     }
     setItems(list);
-  }, [user, pushToOS]);
+  }, [user, pushToOS, navigate]);
 
   useEffect(() => { void load(); }, [load]);
 

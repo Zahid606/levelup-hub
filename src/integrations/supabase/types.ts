@@ -764,11 +764,13 @@ export type Database = {
       get_message_contacts: {
         Args: never
         Returns: {
+          avatar_url: string | null
           full_name: string
           role: string
           user_id: string
         }[]
       }
+      get_unread_message_count: { Args: never; Returns: number }
       get_student_dashboard_summary: {
         Args: { _user_id: string }
         Returns: {

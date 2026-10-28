@@ -5,7 +5,10 @@ export interface MessageContact {
   user_id: string;
   full_name: string;
   role: string;
+  avatar_url: string | null;
 }
+
+const ROLE_PRIORITY = ['admin', 'manager', 'volunteer', 'employee', 'student'];
 
 /**
  * Returns the people the signed-in caller is allowed to message.
@@ -19,7 +22,10 @@ export const getMessageContacts = createServerFn({ method: 'GET' })
 
     const { data: roleRows } = await supabaseAdmin.from('user_roles').select('user_id, role');
     const roles = roleRows ?? [];
-    const roleOf = (id: string) => roles.find(r => r.user_id === id)?.role ?? 'student';
+    const roleOf = (id: string) => {
+      const mine = roles.filter(r => r.user_id === id).map(r => r.role as string);
+      return ROLE_PRIORITY.find(r => mine.includes(r)) ?? 'student';
+    };
     const isStaff = roles.some(r => r.user_id === me && (r.role === 'admin' || r.role === 'manager'));
 
     const ids = new Set<string>();
@@ -48,12 +54,13 @@ export const getMessageContacts = createServerFn({ method: 'GET' })
 
     const { data: profiles } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, full_name')
+      .select('user_id, full_name, avatar_url')
       .in('user_id', Array.from(ids));
 
     return Array.from(ids).map(id => ({
       user_id: id,
       full_name: profiles?.find(p => p.user_id === id)?.full_name || 'User',
       role: roleOf(id),
+      avatar_url: profiles?.find(p => p.user_id === id)?.avatar_url ?? null,
     }));
   });
