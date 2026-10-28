@@ -1,3 +1,21 @@
+-- Run this whole file once in the Supabase SQL Editor. It is safe to re-run.
+-- 1) Makes sure signed-in users can use the messaging tables and helper functions.
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT EXECUTE ON FUNCTION private.is_full_access_staff(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION private.can_message(uuid, uuid) TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.messages TO authenticated;
+
+-- 2) Live updates for the chat.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+  END IF;
+END $$;
+
 -- Lets signed-in users load their own message contacts without relying on the
 -- server-side service-role key. The function only ever returns people the
 -- caller is allowed to message (staff, or assigned volunteer/student pairs),
