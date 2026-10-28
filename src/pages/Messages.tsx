@@ -52,7 +52,12 @@ function listTime(iso: string) {
 async function fetchContacts(): Promise<Contact[]> {
   const { data, error } = await supabase.rpc('get_message_contacts');
   if (!error) return (data || []) as Contact[];
-  return (await getMessageContacts()) as Contact[];
+  try {
+    return (await getMessageContacts()) as Contact[];
+  } catch (e: unknown) {
+    const detail = e instanceof Error ? e.message : 'unknown error';
+    throw new Error(`${error.message} / ${detail}. Messaging needs its one-time database setup (run the message SQL in Supabase).`);
+  }
 }
 
 export default function Messages() {
