@@ -25,6 +25,8 @@ export type Message = {
   created_at: string;
   /** Local only: not confirmed by the server yet. */
   status?: "sending" | "failed" | undefined;
+  /** Local only: why the last send attempt failed. */
+  error?: string | undefined;
 };
 
 export const TEAM_KEY = "team";

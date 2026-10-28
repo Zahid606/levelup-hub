@@ -293,6 +293,11 @@ export function ChatThread({
                           retry
                         </button>
                       )}
+                      {m.status === "failed" && m.error && (
+                        <p className="mt-0.5 max-w-full break-words text-[11px] text-muted-foreground">
+                          Reason: {m.error.slice(0, 160)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
