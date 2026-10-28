@@ -47,16 +47,21 @@ export default function Messages() {
   const [search, setSearch] = useState('');
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  const [contactsError, setContactsError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     const [contactsRes, messagesRes] = await Promise.all([
 
-      getMessageContacts().catch((e: unknown) => {
-        toast.error(`Could not load contacts: ${e instanceof Error ? e.message : 'unknown error'}`);
-        return [] as Contact[];
-      }),
+      getMessageContacts()
+        .then(res => { setContactsError(''); return res; })
+        .catch((e: unknown) => {
+          const msg = e instanceof Error ? e.message : 'unknown error';
+          setContactsError(msg);
+          toast.error(`Could not load contacts: ${msg}`);
+          return [] as Contact[];
+        }),
       supabase
         .from('messages' as any)
         .select('*')
@@ -164,7 +169,13 @@ export default function Messages() {
             <CardContent className="p-3 space-y-2">
               <Input placeholder="Search people…" value={search} onChange={e => setSearch(e.target.value)} />
               <div className="max-h-[60vh] overflow-y-auto divide-y divide-border/60">
-                {sortedContacts.length === 0 && (
+                {contactsError && (
+                  <div className="p-3 space-y-2">
+                    <p className="text-sm text-destructive break-words">Could not load contacts: {contactsError}</p>
+                    <Button size="sm" variant="outline" onClick={() => void load()}>Retry</Button>
+                  </div>
+                )}
+                {!contactsError && sortedContacts.length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">No one available to message yet.</p>
                 )}
                 {sortedContacts.map(c => {
