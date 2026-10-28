@@ -288,7 +288,9 @@ export default function Messages() {
       if (!messagesRef.current.some((m) => m.id === msg.id && m.status)) return;
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === msg.id && m.status ? { ...m, status: "failed" } : m,
+          m.id === msg.id && m.status
+            ? { ...m, status: "failed", error: err?.message || "unknown error" }
+            : m,
         ),
       );
       toast.error(
@@ -326,7 +328,9 @@ export default function Messages() {
   const retry = useCallback(
     (m: Message) => {
       setMessages((prev) =>
-        prev.map((x) => (x.id === m.id ? { ...x, status: "sending" } : x)),
+        prev.map((x) =>
+          x.id === m.id ? { ...x, status: "sending", error: undefined } : x,
+        ),
       );
       void deliver({ ...m, status: "sending" });
     },
@@ -376,6 +380,11 @@ export default function Messages() {
               onTab={setTab}
               loading={loading || !viewer}
               error={error}
+              project={
+                String(import.meta.env["VITE_SUPABASE_URL"] ?? "")
+                  .replace(/^https?:\/\//, "")
+                  .split(".")[0] ?? ""
+              }
               onRetry={() => void retryAll()}
               live={live}
             />

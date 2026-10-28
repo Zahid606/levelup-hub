@@ -27,6 +27,8 @@ type Props = {
   onTab: (tab: ListTab) => void;
   loading: boolean;
   error: string;
+  /** Which Supabase project this site is connected to (not secret). */
+  project: string;
   onRetry: () => void;
   live: boolean;
 };
@@ -44,6 +46,7 @@ export function ConversationList({
   onTab,
   loading,
   error,
+  project,
   onRetry,
   live,
 }: Props) {
@@ -147,6 +150,11 @@ export function ConversationList({
             <Button size="sm" variant="outline" onClick={onRetry}>
               Retry
             </Button>
+            <p className="break-words text-[11px] leading-snug text-muted-foreground">
+              Reason: {error.slice(0, 220)}
+              <br />
+              Connected project: {project || "unknown"}
+            </p>
           </div>
         )}
 
