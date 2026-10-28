@@ -7,10 +7,24 @@ import { LogOut, Moon, Sun, Trophy, Shield, Mail, BookOpen, MessageSquare } from
 import { Link, useNavigate } from '@/lib/router-compat';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import { NotificationBell } from '@/components/NotificationBell';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 
+
+function UnreadBadge({ count, className = '' }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-none text-accent-foreground ${className}`}
+      aria-label={`${count} unread messages`}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 export function TopBar() {
+  const unreadMessages = useUnreadMessages();
   const { user, isAdmin, isManager, isEmployee, isVolunteer, language, setLanguage, darkMode, setDarkMode, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -24,11 +38,11 @@ export function TopBar() {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <img src={logoImg} alt={t('site.name', language)} className="h-10 w-10 rounded-full object-cover " />
-          <span className="hidden md:inline text-sm font-semibold text-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</span>
+          <span className="hidden xl:inline text-sm font-semibold text-foreground" dir={language === 'ur' ? 'rtl' : 'ltr'}>{t('site.name', language)}</span>
         </Link>
 
         {user && (
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             <Link to="/" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-full px-3 py-1.5">
               {t('nav.lessons', language)}
             </Link>
@@ -39,6 +53,7 @@ export function TopBar() {
             <Link to="/messages" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
               <MessageSquare className="h-3.5 w-3.5" />
               {t('nav.messages', language)}
+              <UnreadBadge count={unreadMessages} />
             </Link>
             <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex items-center gap-1.5 rounded-full px-3 py-1.5">
               <Mail className="h-3.5 w-3.5" />
@@ -95,7 +110,7 @@ export function TopBar() {
 
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
                 <LogOut className="h-4 w-4 mr-1" />
-                <span className="hidden md:inline">{t('auth.logout', language)}</span>
+                <span className="hidden xl:inline">{t('auth.logout', language)}</span>
               </Button>
             </>
           )}
@@ -103,7 +118,7 @@ export function TopBar() {
       </div>
 
       {user && (
-        <nav className="md:hidden flex items-center justify-around border-t border-border/50 bg-background/40 backdrop-blur px-2 py-1.5">
+        <nav className="lg:hidden flex items-center justify-around border-t border-border/50 bg-background/40 backdrop-blur px-2 py-1.5">
           <Link to="/" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
             <BookOpen className="h-4 w-4" />
             {t('nav.lessons', language)}
@@ -113,7 +128,10 @@ export function TopBar() {
             {t('nav.leaderboard', language)}
           </Link>
           <Link to="/messages" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
-            <MessageSquare className="h-3.5 w-3.5" />
+            <span className="relative">
+              <MessageSquare className="h-3.5 w-3.5" />
+              <UnreadBadge count={unreadMessages} className="absolute -right-3 -top-2" />
+            </span>
             {t('nav.messages', language)}
           </Link>
           <Link to="/contact" className="flex flex-col items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1">
