@@ -6,7 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Shown on the login page and in the profile dialog so anyone can tell which version of the site they are running.
+const buildId = `${(process.env['VERCEL_GIT_COMMIT_SHA'] ?? process.env['COMMIT_REF'] ?? process.env['GITHUB_SHA'] ?? 'local').slice(0, 7)} · ${new Date().toISOString().slice(0, 10)}`;
+
 export default defineConfig({
+  vite: { define: { __BUILD_ID__: JSON.stringify(buildId) } },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

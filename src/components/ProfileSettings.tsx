@@ -153,6 +153,7 @@ export function ProfileSettings() {
         <DialogHeader>
           <DialogTitle>Student Settings</DialogTitle>
           <DialogDescription>Manage your profile and this device’s notifications.</DialogDescription>
+          <p className="text-[10px] text-muted-foreground/70" dir="ltr">Version {__BUILD_ID__}</p>
         </DialogHeader>
         <div className="space-y-3">
           <Select value={country} onValueChange={v => { setCountry(v); if (v !== 'Saudi Arabia') setCity(''); }}>

@@ -134,6 +134,7 @@ export default function Login() {
             <a href="tel:+966595229775" className="block text-sm font-medium text-primary hover:underline" dir="ltr">+966 595 229 775</a>
             <a href="tel:+966567035796" className="block text-sm font-medium text-primary hover:underline" dir="ltr">+966 567 035 796</a>
           </div>
+          <p className="mt-3 text-center text-[10px] text-muted-foreground/70" dir="ltr">Version {__BUILD_ID__}</p>
         </CardContent>
       </Card>
     </div>
