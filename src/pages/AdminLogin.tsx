@@ -27,7 +27,8 @@ export default function AdminLogin() {
       const hasStaffAccess = roles?.some(r => ['admin', 'manager', 'volunteer'].includes(r.role as string));
       
       if (!hasStaffAccess) {
-        await supabase.auth.signOut();
+        // Only this browser, so a student who tries this page is not logged out elsewhere.
+        await supabase.auth.signOut({ scope: 'local' });
         toast.error('Access denied. Staff accounts only.');
         return;
       }
