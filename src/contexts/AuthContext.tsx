@@ -123,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Only this browser: a bare signOut() ends the session on every device the person is logged in on.
+    await supabase.auth.signOut({ scope: 'local' });
     setUser(null); setSession(null);
     lastUserIdRef.current = null;
     applyRoles(emptyRoles);
